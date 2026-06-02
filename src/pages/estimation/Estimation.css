@@ -1,0 +1,117 @@
+/* ─── Estimation & BOQ ────────────────────────────────────────────────────── */
+.estimation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.estimation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--space-lg);
+}
+
+.estimation-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  opacity: 0;
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.estimation-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-secondary);
+  margin-top: auto;
+}
+
+.boq-table-wrapper {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: visible;
+}
+
+.boq-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.boq-table th {
+  background: var(--bg-tertiary);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.boq-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+}
+
+.boq-table tr:hover td {
+  background: var(--bg-tertiary);
+}
+
+.boq-table .total-row td {
+  background: var(--bg-tertiary);
+  font-weight: 700;
+  color: var(--text-primary);
+  border-top: 2px solid var(--accent-primary);
+}
+
+.boq-inline-input {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  width: 100%;
+  outline: none;
+}
+
+.boq-inline-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary-glow);
+}
+
+.version-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.version-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-primary);
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.version-tab.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.version-tab:hover:not(.active) {
+  background: var(--bg-hover);
+}

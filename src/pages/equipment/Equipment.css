@@ -1,0 +1,51 @@
+/* ─── Equipment Page ───────────────────────────────────────────────────────── */
+/* Reuses logic from Labour.css for consistency but adds equipment-specific tweaks */
+
+.equipment-page { display: flex; flex-direction: column; height: 100%; }
+
+/* Most styles are inherited from global or match Labour.css patterns */
+/* We'll just define equipment-specific overrides here if needed */
+
+.machinery-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+}
+
+.row-actions { opacity: 1 !important; }
+
+.ra-btn, .ra-btn-primary, .ra-btn-danger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 0.5px solid var(--border-primary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.ra-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.ra-btn-primary {
+  background: var(--accent-primary-tint);
+  border-color: var(--accent-primary-border);
+  color: var(--accent-primary);
+}
+.ra-btn-primary:hover { background: var(--accent-primary); color: white; }
+
+.ra-btn-danger {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+  color: #DC2626;
+}
+.ra-btn-danger:hover { background: #DC2626; color: white; }

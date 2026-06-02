@@ -1,0 +1,44 @@
+/* ─── Page Wrapper — Clean Professional ───────────────────────────────────── */
+.page-wrapper {
+  padding: 18px;
+  min-height: calc(100vh - var(--topbar-height));
+  background: var(--bg-primary);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: var(--space-lg);
+}
+
+.page-header-text {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
