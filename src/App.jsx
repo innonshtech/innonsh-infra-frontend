@@ -41,10 +41,25 @@ const ProtectedRoute = () => {
 
   return <Outlet />;
 };
+const IndexRoute = () => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="page-loader"><div className="spinner spinner-lg"></div></div>;
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  window.location.href = '/landing.html';
+  return null;
+};
 
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<IndexRoute />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       
@@ -60,7 +75,6 @@ function AppRoutes() {
         {/* Standard Tenant Layer (Builder / Contractor) */}
         <Route element={<SubscriptionGuard />}>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectListPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
