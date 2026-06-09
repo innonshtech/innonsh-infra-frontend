@@ -36,7 +36,7 @@ export default function SuperadminLayout() {
             <HardHat size={24} />
           </div>
           <div className="sidebar-brand-text">
-            <span className="sidebar-brand-name">ConstructERP</span>
+            <span className="sidebar-brand-name">Innonsh Infra</span>
             <span className="sidebar-brand-type" style={{ color: '#8b5cf6' }}>SUPERADMIN</span>
           </div>
         </div>

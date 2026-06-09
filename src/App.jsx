@@ -5,6 +5,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import AppLayout from './components/layout/AppLayout';
 import SuperadminLayout from './components/layout/SuperadminLayout';
 import SubscriptionGuard from './components/layout/SubscriptionGuard';
+import LandingPage from './pages/landing/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -52,8 +53,7 @@ const IndexRoute = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  window.location.href = '/landing.html';
-  return null;
+  return <LandingPage />;
 };
 
 function AppRoutes() {

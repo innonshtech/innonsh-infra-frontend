@@ -48,8 +48,8 @@ export default function LoginPage() {
             <div className="auth-logo">
               <HardHat size={32} />
             </div>
-            <h1 className="auth-title">ConstructERP</h1>
-            <p className="auth-subtitle">Construction & Real Estate ERP Platform</p>
+            <h1 className="auth-title">Innonsh Infra</h1>
+            <p className="auth-subtitle">Construction & Infrastructure ERP Platform</p>
           </div>
 
           {/* Form */}

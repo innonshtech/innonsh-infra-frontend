@@ -34,7 +34,7 @@ export default function Topbar() {
     <header className="topbar">
       <div className="topbar-left">
         <div className="topbar-breadcrumb">
-          <span className="breadcrumb-root">ConstructERP</span>
+          <span className="breadcrumb-root">Innonsh Infra</span>
           <ChevronRight size={14} className="breadcrumb-sep" />
           <span className="breadcrumb-current">{pageTitle}</span>
           {subPath && (

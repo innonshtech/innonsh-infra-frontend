@@ -70,7 +70,7 @@ export default function RegisterPage() {
             </div>
             <h1 className="auth-title">Create Your Company</h1>
             <p className="auth-subtitle">
-              Set up your construction ERP in minutes
+              Set up your Innonsh Infra ERP in minutes
             </p>
           </div>
 

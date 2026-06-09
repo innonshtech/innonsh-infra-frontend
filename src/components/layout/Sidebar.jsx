@@ -67,7 +67,7 @@ export default function Sidebar() {
         </div>
         {!collapsed && (
           <div className="sidebar-brand-text">
-            <span className="sidebar-brand-name">ConstructERP</span>
+            <span className="sidebar-brand-name">Innonsh Infra</span>
             <span className="sidebar-brand-type">{erpType}</span>
           </div>
         )}

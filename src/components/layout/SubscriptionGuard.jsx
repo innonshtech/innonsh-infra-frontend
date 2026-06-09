@@ -8,7 +8,7 @@ export default function SubscriptionGuard() {
   const role = user?.role?.name || user?.role;
 
   // Superadmins always bypass the subscription lock and shouldn't be in the tenant view
-  if (role === 'SUPERADMIN' || user?.email === 'superadmin@constructerp.com') {
+  if (role === 'SUPERADMIN' || user?.email === 'superadmin@innonsh.com') {
     return <Navigate to="/superadmin" replace />;
   }
 
@@ -31,11 +31,11 @@ export default function SubscriptionGuard() {
             {isPending
               ? "Your company registration is currently pending approval from the platform administrator. We will notify you once access is granted."
               : isSuspended 
-                ? "Your company's access to the ConstructERP platform has been suspended by the administrator."
+                ? "Your company's access to the Innonsh Infra platform has been suspended by the administrator."
                 : "Your trial or subscription has expired. Please upgrade your plan to restore access."}
           </p>
           {!isPending && (
-            <button className="btn btn-primary w-full" onClick={() => window.location.href = 'mailto:billing@constructerp.com'}>
+            <button className="btn btn-primary w-full" onClick={() => window.location.href = 'mailto:billing@innonsh.com'}>
               <CreditCard size={18} /> Contact Billing Support
             </button>
           )}
