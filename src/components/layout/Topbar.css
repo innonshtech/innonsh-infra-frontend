@@ -1,4 +1,4 @@
-/* ─── Topbar — Clean Professional Light Theme ─────────────────────────────── */
+/* ─── Topbar — Premium Light Theme ────────────────────────────────────────── */
 .topbar {
   height: var(--topbar-height);
   background: var(--bg-secondary);
@@ -6,10 +6,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 50;
+  box-shadow: none;
 }
 
 .topbar-left {
@@ -22,32 +23,37 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  font-size: 11px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
 }
 
 .breadcrumb-root {
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .breadcrumb-sep {
-  color: var(--border-primary);
+  color: var(--text-disabled);
+  opacity: 0.7;
 }
 
 .breadcrumb-current {
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .breadcrumb-sub {
   color: var(--text-muted);
   text-transform: capitalize;
+  font-weight: 400;
 }
 
 .topbar-title {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-primary);
-  flex: 1;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .topbar-right {
@@ -56,45 +62,35 @@
   gap: var(--space-md);
 }
 
-/* Project context pill */
-.topbar-context-pill {
-  font-size: 11px;
-  color: var(--text-secondary);
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-primary);
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.topbar-context-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #059669;
-}
-
+/* Search Box Redesign */
 .topbar-search {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-primary);
-  border-radius: 20px;
-  padding: 4px 12px;
-  transition: all var(--transition-fast);
+  background: var(--bg-hover);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 24px;
+  padding: 5px 14px;
+  transition: all var(--transition-base);
   min-width: 180px;
+  width: 180px;
 }
 
 .topbar-search:focus-within {
   border-color: var(--accent-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--accent-primary-glow);
+  width: 240px; /* Expand on focus */
 }
 
 .topbar-search svg {
   color: var(--text-muted);
   flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.topbar-search:focus-within svg {
+  color: var(--accent-primary);
 }
 
 .topbar-search input {
@@ -110,41 +106,74 @@
   color: var(--text-muted);
 }
 
+/* Action Buttons */
 .topbar-notification {
   position: relative;
   background: var(--bg-secondary);
-  border: 0.5px solid var(--border-primary);
-  border-radius: var(--radius-sm);
-  width: 28px;
-  height: 28px;
-  color: var(--text-muted);
+  border: 1px solid var(--border-primary);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .topbar-notification:hover {
   background: var(--bg-hover);
-  color: var(--text-primary);
+  color: var(--accent-primary);
+  border-color: rgba(27, 94, 79, 0.3);
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+/* Language switch pill custom design */
+.topbar-lang-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  border-radius: 20px !important;
+  width: auto !important;
+  padding: 0 14px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2) !important;
+}
+
+.topbar-lang-btn:hover {
+  transform: translateY(-1px) scale(1.03) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
 }
 
 .notification-dot {
   position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 6px;
-  height: 6px;
+  top: 1px;
+  right: 1px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #DC2626;
-  border: 1px solid var(--bg-secondary);
+  background: var(--accent-danger);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 6px rgba(220, 38, 38, 0.4);
 }
 
 .topbar-divider {
-  width: 0.5px;
-  height: 24px;
-  background: var(--border-primary);
+  width: 1px;
+  height: 20px;
+  background: rgba(229, 231, 235, 0.8);
+}
+
+/* User Brief Profile details */
+.topbar-profile-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 2px 4px;
+  border-radius: 24px;
+  transition: all var(--transition-base);
 }
 
 .topbar-user-brief {
@@ -154,12 +183,36 @@
 }
 
 .topbar-greeting {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .topbar-user-name {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.topbar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1b5e4f 0%, #10b981 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(27, 94, 79, 0.2);
+  transition: transform var(--transition-base);
+  cursor: default;
+}
+
+.topbar-user-avatar:hover {
+  transform: scale(1.05);
 }

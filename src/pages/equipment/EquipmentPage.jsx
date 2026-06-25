@@ -74,7 +74,10 @@ export default function EquipmentPage() {
       setShowAddModal(false);
       setNewItem({ name: '', type: 'Excavator', serialNumber: '', ownership: 'OWNED', projectId: '', dailyRentalRate: '', hourlyRate: '', purchaseCost: '', assetLifeYears: '10', depreciationMethod: 'SLM', purchaseDate: '' });
       loadData();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      alert(e.response?.data?.message || e.message || 'Failed to add equipment');
+      console.error(e); 
+    }
   };
 
   const handleDeploy = async (e) => {

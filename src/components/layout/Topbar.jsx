@@ -54,13 +54,12 @@ export default function Topbar() {
         </div>
 
         <button 
-          className="topbar-notification" 
+          className="topbar-notification topbar-lang-btn" 
           onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
           title="Switch Language"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 12px' }}
         >
-          <Languages size={18} />
-          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{lang === 'en' ? 'EN' : 'HI'}</span>
+          <Languages size={14} />
+          <span style={{ fontSize: '11px' }}>{lang === 'en' ? 'EN' : 'HI'}</span>
         </button>
 
         <button className="topbar-notification">
@@ -70,11 +69,16 @@ export default function Topbar() {
 
         <div className="topbar-divider" />
 
-        <div className="topbar-user-brief">
-          <span className="topbar-greeting">
-            {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening'}
-          </span>
-          <span className="topbar-user-name">{user?.firstName}</span>
+        <div className="topbar-profile-container">
+          <div className="topbar-user-brief">
+            <span className="topbar-greeting">
+              {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening'}
+            </span>
+            <span className="topbar-user-name">{user?.firstName} {user?.lastName}</span>
+          </div>
+          <div className="topbar-user-avatar" title={`${user?.firstName || ''} ${user?.lastName || ''}`}>
+            {user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}` : 'U'}
+          </div>
         </div>
       </div>
     </header>

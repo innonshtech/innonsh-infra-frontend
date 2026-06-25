@@ -80,11 +80,11 @@ export function AuthProvider({ children }) {
     
     // Support robust case-insensitive check for all administrative roles
     const r = typeof user.role === 'string' ? user.role.toLowerCase() : (user.role?.name || '').toLowerCase();
-    if (r === 'owner' || r === 'admin' || r === 'contractor' || r === 'builder') return true;
+    if (r === 'owner' || r === 'admin' || r === 'contractor' || r === 'builder' || r === 'superadmin') return true;
     
     // Check if the specific permission exists in the user's permissions array
     const userPermissions = user.permissions || [];
-    return userPermissions.includes(permission);
+    return userPermissions.includes(permission) || userPermissions.includes('*');
   }, [user]);
 
   const value = {
