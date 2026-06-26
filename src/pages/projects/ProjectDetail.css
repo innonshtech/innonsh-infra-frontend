@@ -241,3 +241,24 @@
   font-weight: 600;
   font-size: var(--font-size-md);
 }
+
+/* ─── Card Headers (Financials / WBS) ─── */
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-xl) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+  background: var(--bg-tertiary);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.chart-header h3 {
+  margin: 0 !important;
+  font-size: var(--font-size-md) !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { equipmentService, projectService } from '../../services/api';
 import { Truck, Fuel, Settings, Trash2, MapPin, History, ArrowRightLeft, Home } from 'lucide-react';
 import './Equipment.css';
+import { useToast } from '../../contexts/ToastContext';
 
 const TYPES = ['Excavator', 'Crane', 'Generator', 'Truck', 'Mixer', 'Compressor', 'Drill', 'JCB', 'Other'];
 
 export default function EquipmentPage() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('register');
   const [equipment, setEquipment] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -20,6 +22,7 @@ export default function EquipmentPage() {
   const [deployments, setDeployments] = useState([]);
   const [fuelLogs, setFuelLogs] = useState([]);
   const [depReport, setDepReport] = useState({ assets: [], summary: {} });
+  const [submitting, setSubmitting] = useState(false);
 
   const [newItem, setNewItem] = useState({ name: '', type: 'Excavator', serialNumber: '', ownership: 'OWNED', projectId: '', dailyRentalRate: '', hourlyRate: '', purchaseCost: '', assetLifeYears: '10', depreciationMethod: 'SLM', purchaseDate: '' });
   const [deployForm, setDeployForm] = useState({ projectId: '', startDate: '', dailyRate: '', notes: '' });
@@ -60,7 +63,9 @@ export default function EquipmentPage() {
 
   const handleAdd = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
+      setSubmitting(true);
       await equipmentService.create({
         ...newItem,
         dailyRentalRate: newItem.dailyRentalRate ? parseFloat(newItem.dailyRentalRate) : undefined,
@@ -73,43 +78,65 @@ export default function EquipmentPage() {
       });
       setShowAddModal(false);
       setNewItem({ name: '', type: 'Excavator', serialNumber: '', ownership: 'OWNED', projectId: '', dailyRentalRate: '', hourlyRate: '', purchaseCost: '', assetLifeYears: '10', depreciationMethod: 'SLM', purchaseDate: '' });
+      toast.success('Equipment registered successfully');
       loadData();
     } catch (e) { 
-      alert(e.response?.data?.message || e.message || 'Failed to add equipment');
+      toast.error(e.response?.data?.message || e.message || 'Failed to add equipment');
       console.error(e); 
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDeploy = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
+      setSubmitting(true);
       await equipmentService.deployToProject(selectedEquipment.id, {
         ...deployForm, dailyRate: parseFloat(deployForm.dailyRate) || selectedEquipment.dailyRentalRate || 0
       });
-      setShowDeployModal(false); loadData(); loadDeployments();
-      alert('Equipment deployed to project!');
-    } catch (e) { alert(e.response?.data?.message || 'Failed'); }
+      setShowDeployModal(false); 
+      toast.success('Equipment deployed to project successfully');
+      loadData(); 
+      loadDeployments();
+    } catch (e) { 
+      toast.error(e.response?.data?.message || 'Failed to deploy equipment'); 
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEndDeployment = async (depId) => {
     if (!confirm('End this deployment? Cost will be calculated and recorded as expense.')) return;
     try {
       const { data } = await equipmentService.endDeployment(depId);
-      alert(`Deployment ended. Total cost: ₹${data.data?.totalCost?.toLocaleString('en-IN') || 0}`);
-      loadDeployments(); loadData();
-    } catch (e) { alert('Failed to end deployment'); }
+      toast.success(`Deployment ended. Total cost: ₹${data.data?.totalCost?.toLocaleString('en-IN') || 0}`);
+      loadDeployments(); 
+      loadData();
+    } catch (e) { 
+      toast.error('Failed to end deployment'); 
+    }
   };
 
   const handleFuelLog = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
+      setSubmitting(true);
       await equipmentService.addFuelLog(selectedEquipment.id, {
         ...fuelForm, quantity: parseFloat(fuelForm.quantity), costPerUnit: parseFloat(fuelForm.costPerUnit),
         projectId: fuelForm.projectId || undefined
       });
-      setShowFuelModal(false); loadFuelLogs();
-      alert('Fuel log added & expense recorded!');
-    } catch (e) { alert('Failed'); }
+      setShowFuelModal(false); 
+      toast.success('Fuel log recorded & expense created');
+      loadFuelLogs();
+      loadData();
+    } catch (e) { 
+      toast.error(e.response?.data?.message || 'Failed to record fuel log'); 
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const fmt = (n) => `₹${(n || 0).toLocaleString('en-IN')}`;
@@ -219,8 +246,9 @@ export default function EquipmentPage() {
                               if (window.confirm(`Return ${item.name} to Central Yard?`)) {
                                 try {
                                   await equipmentService.update(item.id, { projectId: null, status: 'IDLE' });
+                                  toast.success(`${item.name} returned to Central Yard successfully`);
                                   loadData();
-                                } catch (e) { alert('Failed to return'); }
+                                } catch (e) { toast.error('Failed to return equipment to Central Yard'); }
                               }
                             }}
                           >
@@ -366,7 +394,12 @@ export default function EquipmentPage() {
                 )}
                 <div className="fld"><label className="fld-lbl">Current Project</label><select className="fld-sel" value={newItem.projectId} onChange={e => setNewItem(p => ({ ...p, projectId: e.target.value }))}><option value="">Central Yard</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
               </div>
-              <div className="modal-foot"><button type="button" className="btn-gp" onClick={() => setShowAddModal(false)}>Cancel</button><button type="submit" className="btn-pp">Add Equipment</button></div>
+              <div className="modal-foot">
+                <button type="button" className="btn-gp" onClick={() => setShowAddModal(false)}>Cancel</button>
+                <button type="submit" className="btn-pp" disabled={submitting}>
+                  {submitting ? 'Adding...' : 'Add Equipment'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -401,8 +434,8 @@ export default function EquipmentPage() {
               </div>
               <div className="modal-foot">
                 <button type="button" className="btn-gp" onClick={() => setShowDeployModal(false)}>Cancel</button>
-                <button type="submit" className="btn-pp">
-                  {selectedEquipment.projectId ? 'Confirm Transfer' : 'Deploy to Project'}
+                <button type="submit" className="btn-pp" disabled={submitting}>
+                  {submitting ? 'Saving...' : (selectedEquipment.projectId ? 'Confirm Transfer' : 'Deploy to Project')}
                 </button>
               </div>
             </form>
@@ -428,7 +461,12 @@ export default function EquipmentPage() {
                 {fuelForm.quantity && fuelForm.costPerUnit && <div style={{ padding: '8px 12px', background: 'var(--surface-secondary)', borderRadius: 8, fontWeight: 600, fontSize: 14 }}>Total: {fmt(parseFloat(fuelForm.quantity) * parseFloat(fuelForm.costPerUnit))}</div>}
                 <div className="fld"><label className="fld-lbl">Operator Name</label><input className="fld-inp" value={fuelForm.operatorName} onChange={e => setFuelForm(p => ({ ...p, operatorName: e.target.value }))} /></div>
               </div>
-              <div className="modal-foot"><button type="button" className="btn-gp" onClick={() => setShowFuelModal(false)}>Cancel</button><button type="submit" className="btn-pp">Save Fuel Log</button></div>
+              <div className="modal-foot">
+                <button type="button" className="btn-gp" onClick={() => setShowFuelModal(false)}>Cancel</button>
+                <button type="submit" className="btn-pp" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Save Fuel Log'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

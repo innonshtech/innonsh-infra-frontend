@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import './ProjectDetail.css';
+import CompletionProofViewModal from '../../components/project/CompletionProofViewModal';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -282,6 +283,7 @@ function ProjectOverview({ project, tasks }) {
 function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, onUpdateProgress, onEditTask, hasPermission }) {
   const [expanded, setExpanded] = useState({});
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [viewProofTask, setViewProofTask] = useState(null);
   const { t } = useTranslation();
 
   const toggleExpand = (id) => {
@@ -345,8 +347,32 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
             </div>
           </td>
           <td className="wbs-cell" style={{ width: '120px' }}>
-            <span className={`status-pill ${task.status === 'COMPLETED' ? 'p-nt' : task.status === 'IN_PROGRESS' ? 'p-ok' : 'p-in'}`}>
-              {task.status}
+            <div className="flex items-center gap-xs">
+              <span className={`status-pill ${task.status === 'COMPLETED' ? 'p-nt' : task.status === 'IN_PROGRESS' ? 'p-ok' : 'p-in'}`}>
+                {task.status}
+              </span>
+              {(task.completionNotes || task.completionImageUrl) && (
+                <button 
+                  className="btn btn-icon btn-ghost btn-xs text-success"
+                  title="View Completion Proof"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setViewProofTask(task);
+                  }}
+                  style={{ padding: '2px', display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <Camera size={14} style={{ color: 'var(--accent-primary)' }} />
+                </button>
+              )}
+            </div>
+          </td>
+          <td className="wbs-cell" style={{ width: '140px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
+              {task.assignedToUser 
+                ? `${task.assignedToUser.firstName} ${task.assignedToUser.lastName}` 
+                : task.assignedToWorker 
+                  ? `${task.assignedToWorker.firstName} ${task.assignedToWorker.lastName} (Site)` 
+                  : '—'}
             </span>
           </td>
           <td className="wbs-cell" style={{ width: '150px' }}>
@@ -393,6 +419,7 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
               <th style={{ width: '100px' }}>{t('wbs_code')}</th>
               <th style={{ minWidth: '300px' }}>{t('task_desc')}</th>
               <th style={{ width: '120px' }}>{t('status')}</th>
+              <th style={{ width: '140px' }}>Assigned To</th>
               <th style={{ width: '150px' }}>{t('progress')}</th>
               <th style={{ width: '80px' }}>{t('weight')}</th>
               <th style={{ width: '100px' }}></th>
@@ -401,7 +428,7 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
           <tbody>
             {initialTasks.map(task => renderTask(task))}
             {initialTasks.length === 0 && (
-              <tr><td colSpan={6} className="text-center text-muted py-2xl">{t('no_tasks')}</td></tr>
+              <tr><td colSpan={7} className="text-center text-muted py-2xl">{t('no_tasks')}</td></tr>
             )}
           </tbody>
         </table>
@@ -417,6 +444,15 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
         onClose={() => setTaskToDelete(null)}
         type="danger"
       />
+
+      {viewProofTask && (
+        <CompletionProofViewModal
+          taskName={viewProofTask.name}
+          notes={viewProofTask.completionNotes}
+          imageUrl={viewProofTask.completionImageUrl}
+          onClose={() => setViewProofTask(null)}
+        />
+      )}
     </div>
   );
 }
@@ -450,17 +486,13 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
   const { t } = useTranslation();
   const toast = useToast();
 
-  // Load workers/supervisors + management team for this project
+  // Load management team for this project
   useEffect(() => {
     const loadPeople = async () => {
       try {
-        const [workerRes, userRes] = await Promise.all([
-          labourService.getWorkers({ projectId: projectId }).catch(() => ({ data: { data: [] } })),
-          userService.getAll().catch(() => ({ data: { data: [] } }))
-        ]);
-        setWorkers(workerRes.data?.data || []);
-        setTeamMembers(userRes.data?.data || []);
-      } catch { setWorkers([]); setTeamMembers([]); }
+        const { data } = await userService.getAll().catch(() => ({ data: { data: [] } }));
+        setTeamMembers(data.data || []);
+      } catch { setTeamMembers([]); }
     };
     loadPeople();
   }, [projectId]);
@@ -487,10 +519,18 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
     if (!form.name) return toast.warning('Name is required');
     try {
       setSubmitting(true);
+      
+      const payload = {
+        ...form,
+        assignedUserId: form.assignedTo.startsWith('user-') ? form.assignedTo.substring(5) : null,
+        assignedWorkerId: form.assignedTo.startsWith('worker-') ? form.assignedTo.substring(7) : null,
+      };
+      delete payload.assignedTo;
+
       // Create main task
       const mainRes = await (isBuilder 
-        ? projectService.builderCreateTask(projectId, { ...form, parentId }) 
-        : projectService.createTask(projectId, { ...form, parentId }));
+        ? projectService.builderCreateTask(projectId, { ...payload, parentId }) 
+        : projectService.createTask(projectId, { ...payload, parentId }));
       
       const newMainId = mainRes.data?.data?.id || mainRes.data?.id;
 
@@ -574,18 +614,9 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
                     ))}
                   </optgroup>
                 )}
-                {workers.filter(w => w.status === 'ACTIVE').length > 0 && (
-                  <optgroup label="👷 Site Workers">
-                    {workers.filter(w => w.status === 'ACTIVE').map(w => (
-                      <option key={`worker-${w.id}`} value={`worker-${w.id}`}>
-                        {w.firstName} {w.lastName} ({w.role})
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
               </select>
-              {workers.length === 0 && teamMembers.length === 0 && (
-                <span style={{ fontSize: 10, color: '#f59e0b', marginTop: 4, display: 'block' }}>No team members or workers found. Invite members or add workers first.</span>
+              {teamMembers.length === 0 && (
+                <span style={{ fontSize: 10, color: '#f59e0b', marginTop: 4, display: 'block' }}>No team members found. Invite members first.</span>
               )}
             </div>
 
@@ -850,10 +881,10 @@ function ProgressUpdateModal({ task, onClose, onRefresh }) {
   const [form, setForm] = useState({ 
     progress: task.progress || 0, 
     status: task.status || 'PENDING',
-    imageUrl: task.imageUrl || '',
-    remark: ''
+    imageUrl: task.completionImageUrl || task.imageUrl || '',
+    remark: task.completionNotes || ''
   });
-  const [photoPreview, setPhotoPreview] = useState(task.imageUrl || null);
+  const [photoPreview, setPhotoPreview] = useState(task.completionImageUrl || task.imageUrl || null);
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
@@ -873,7 +904,13 @@ function ProgressUpdateModal({ task, onClose, onRefresh }) {
     e.preventDefault();
     try {
       setSubmitting(true);
-      await projectService.updateTask(task.id, form);
+      const isCompleted = form.progress === 100 || form.status === 'COMPLETED';
+      const payload = {
+        ...form,
+        completionNotes: isCompleted ? form.remark : null,
+        completionImageUrl: isCompleted ? form.imageUrl : null
+      };
+      await projectService.updateTask(task.id, payload);
       toast.success('Progress updated');
       onRefresh();
       onClose();
@@ -977,18 +1014,38 @@ function EditTaskModal({ task, isBuilder, onClose, onRefresh }) {
     imageUrl: task.imageUrl || '',
     isMilestone: task.isMilestone || false,
     milestoneTriggerValue: task.milestoneTriggerValue || 100,
+    assignedTo: task.assignedUserId ? `user-${task.assignedUserId}` : task.assignedWorkerId ? `worker-${task.assignedWorkerId}` : ''
   });
+  const [workers, setWorkers] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const { t } = useTranslation();
   const toast = useToast();
+
+  useEffect(() => {
+    const loadPeople = async () => {
+      try {
+        const { data } = await userService.getAll().catch(() => ({ data: { data: [] } }));
+        setTeamMembers(data.data || []);
+      } catch { setTeamMembers([]); }
+    };
+    loadPeople();
+  }, [task.projectId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name) return toast.warning('Name is required');
     try {
       setSubmitting(true);
-      if (isBuilder) await projectService.builderUpdateTask(task.id, form);
-      else await projectService.updateTask(task.id, form);
+      const payload = {
+        ...form,
+        assignedUserId: form.assignedTo.startsWith('user-') ? form.assignedTo.substring(5) : null,
+        assignedWorkerId: form.assignedTo.startsWith('worker-') ? form.assignedTo.substring(7) : null,
+      };
+      delete payload.assignedTo;
+
+      if (isBuilder) await projectService.builderUpdateTask(task.id, payload);
+      else await projectService.updateTask(task.id, payload);
       toast.success('Task updated');
       onRefresh();
       onClose();
@@ -1015,6 +1072,28 @@ function EditTaskModal({ task, isBuilder, onClose, onRefresh }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
               <div className="form-group"><label className="form-label">{t('start_date')}</label><input type="date" className="form-input" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} /></div>
               <div className="form-group"><label className="form-label">{t('end_date')}</label><input type="date" className="form-input" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} /></div>
+            </div>
+
+            {/* Assign Responsible Person */}
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <UserCheck size={14} /> Assign Responsible Person
+              </label>
+              <select className="form-input" value={form.assignedTo} onChange={e => setForm({...form, assignedTo: e.target.value})}>
+                <option value="">— Not Assigned —</option>
+                {teamMembers.length > 0 && (
+                  <optgroup label="💼 Management Team">
+                    {teamMembers.map(u => (
+                      <option key={`user-${u.id}`} value={`user-${u.id}`}>
+                        {u.firstName} {u.lastName} ({u.role || 'Manager'})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              {teamMembers.length === 0 && (
+                <span style={{ fontSize: 10, color: '#f59e0b', marginTop: 4, display: 'block' }}>No team members found. Invite members first.</span>
+              )}
             </div>
 
             <div className="form-group"><label className="form-label">{t('photo_url')}</label><input className="form-input" placeholder="https://..." value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} /></div>

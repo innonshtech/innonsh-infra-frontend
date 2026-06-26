@@ -3,10 +3,12 @@ import { labourService, projectService } from '../../services/api';
 import './Labour.css';
 import * as XLSX from 'xlsx';
 import { generatePayrollPDF } from '../../utils/payrollPdf';
+import { useToast } from '../../contexts/ToastContext';
 
 const ROLES = ['Mason', 'Electrician', 'Helper', 'Carpenter', 'Plumber', 'Painter', 'Welder', 'Supervisor'];
 
 export default function LabourPage() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('workers');
   const [workers, setWorkers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -20,12 +22,14 @@ export default function LabourPage() {
   // Add Worker Modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [newWorker, setNewWorker] = useState({ firstName: '', lastName: '', phone: '', role: 'Mason', dailyWage: '', projectId: '' });
+  const [saving, setSaving] = useState(false);
 
   // Attendance
   const [attDate, setAttDate] = useState(new Date().toISOString().split('T')[0]);
   const [attProject, setAttProject] = useState('');
   const [attRecords, setAttRecords] = useState([]);
   const [attSummary, setAttSummary] = useState({ present: 0, absent: 0, halfDay: 0, totalWage: 0 });
+  const [savingAtt, setSavingAtt] = useState(false);
   const [attDirty, setAttDirty] = useState(false);
 
   // Payroll
@@ -148,7 +152,9 @@ export default function LabourPage() {
   };
 
   const saveAttendance = async () => {
+    if (savingAtt) return;
     try {
+      setSavingAtt(true);
       const records = attRecords.map(r => ({
         workerId: r.workerId,
         projectId: r.projectId || undefined,
@@ -157,9 +163,15 @@ export default function LabourPage() {
         wageAmount: r.wageAmount
       }));
       await labourService.saveAttendance(records);
+      toast.success('Attendance saved successfully');
       setAttDirty(false);
       loadAttendance();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      toast.error(e.response?.data?.message || 'Failed to save attendance');
+    } finally {
+      setSavingAtt(false);
+    }
   };
 
   // Payroll helpers
@@ -189,7 +201,9 @@ export default function LabourPage() {
   // Add worker handler
   const handleAddWorker = async (e) => {
     e.preventDefault();
+    if (saving) return;
     try {
+      setSaving(true);
       await labourService.createWorker({
         ...newWorker,
         dailyWage: parseFloat(newWorker.dailyWage),
@@ -199,7 +213,12 @@ export default function LabourPage() {
       setNewWorker({ firstName: '', lastName: '', phone: '', role: 'Mason', dailyWage: '', projectId: '' });
       loadWorkers();
       loadStats();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+      alert(e.response?.data?.message || 'Failed to add worker');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getInitials = (f, l) => `${(f || '')[0] || ''}${(l || '')[0] || ''}`.toUpperCase();
@@ -274,8 +293,10 @@ export default function LabourPage() {
         )}
         {activeTab === 'attendance' && (
           <>
-            <button className="btn-bp" onClick={markAllPresent}>Mark all present</button>
-            <button className="btn-pp" onClick={saveAttendance} disabled={!attDirty}>Save attendance</button>
+            <button className="btn-bp" onClick={markAllPresent} disabled={savingAtt}>Mark all present</button>
+            <button className="btn-pp" onClick={saveAttendance} disabled={!attDirty || savingAtt}>
+              {savingAtt ? 'Saving...' : 'Save attendance'}
+            </button>
           </>
         )}
         {activeTab === 'wages' && (
@@ -511,7 +532,9 @@ export default function LabourPage() {
               </div>
               <div className="modal-foot">
                 <button type="button" className="btn-gp" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn-pp">Add worker</button>
+                <button type="submit" className="btn-pp" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
               </div>
             </form>
           </div>

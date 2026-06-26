@@ -14,6 +14,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 const contractorMenu = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Projects', icon: FolderKanban, path: '/projects' },
+  { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
   { label: 'Estimation & BOQ', icon: Calculator, path: '/estimation' },
   { label: 'Procurement', icon: ShoppingCart, path: '/procurement' },
   { label: 'Inventory', icon: Package, path: '/inventory' },
@@ -22,12 +23,13 @@ const contractorMenu = [
   { label: 'Finance', icon: IndianRupee, path: '/finance' },
   { label: 'Contracts', icon: FileText, path: '/contracts' },
   { label: 'Reports', icon: BarChart3, path: '/reports' },
-  { label: 'Settings', icon: Settings, path: '/settings' },
+  { label: 'Organization', icon: Building2, path: '/settings' },
 ];
 
 const builderMenu = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Projects', icon: FolderKanban, path: '/projects' },
+  { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
   { label: 'Units', icon: Grid3X3, path: '/units' },
   { label: 'Bookings', icon: BookOpen, path: '/bookings' },
   { label: 'Billing', icon: FileText, path: '/billing' },
@@ -38,11 +40,11 @@ const builderMenu = [
   { label: 'Inventory', icon: Package, path: '/inventory' },
   { label: 'Finance', icon: IndianRupee, path: '/finance' },
   { label: 'Reports', icon: BarChart3, path: '/reports' },
-  { label: 'Settings', icon: Settings, path: '/settings' },
+  { label: 'Organization', icon: Building2, path: '/settings' },
 ];
 
 export default function Sidebar() {
-  const { erpType, user, logout } = useAuth();
+  const { erpType, user, company, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const toast = useToast();
@@ -56,6 +58,7 @@ export default function Sidebar() {
 
   const menu = erpType === 'BUILDER' ? builderMenu : contractorMenu;
   const initials = user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}` : 'U';
+  const logoUrl = company?.logo || user?.company?.logo;
 
   return (
     <>
@@ -63,7 +66,11 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="sidebar-brand">
         <div className="sidebar-logo">
-          <HardHat size={24} />
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+          ) : (
+            <HardHat size={24} />
+          )}
         </div>
         {!collapsed && (
           <div className="sidebar-brand-text">

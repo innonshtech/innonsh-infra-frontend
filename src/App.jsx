@@ -12,6 +12,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import SuperadminDashboard from './pages/superadmin/SuperadminDashboard';
 import ProjectListPage from './pages/projects/ProjectListPage';
 import ProjectDetailPage from './pages/projects/ProjectDetailPage';
+import MyTasksPage from './pages/tasks/MyTasksPage';
 import EstimationPage from './pages/estimation/EstimationPage';
 import ProcurementPage from './pages/procurement/ProcurementPage';
 import InventoryPage from './pages/inventory/InventoryPage';
@@ -78,6 +79,7 @@ function AppRoutes() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectListPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/my-tasks" element={<MyTasksPage />} />
             
             {/* Core Contractor Modules */}
             <Route path="/estimation" element={<EstimationPage />} />

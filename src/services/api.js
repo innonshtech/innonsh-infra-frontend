@@ -83,6 +83,7 @@ export const projectService = {
   createTask: (id, data) => api.post(`/contractor/projects/${id}/tasks`, data),
   updateTask: (taskId, data) => api.patch(`/contractor/projects/tasks/${taskId}`, data),
   deleteTask: (taskId) => api.delete(`/contractor/projects/tasks/${taskId}`),
+  myTasks: () => api.get('/contractor/projects/tasks/my-tasks'),
   // Builder
   builderGetAll: () => api.get('/builder/projects'),
   builderGetById: (id) => api.get(`/builder/projects/${id}`),
@@ -248,6 +249,29 @@ export const userService = {
   update: (id, data) => api.patch(`/users/${id}`, data),
   updatePermissions: (id, permissions) => api.patch(`/users/${id}/permissions`, { permissions }),
   delete: (id) => api.delete(`/users/${id}`),
+};
+
+export const organizationService = {
+  getProfile: () => api.get('/organization/profile'),
+  updateProfile: (data) => api.put('/organization/profile', data),
+  updateSettings: (data) => api.put('/organization/settings', data),
+  // Branches
+  getBranches: () => api.get('/organization/branches'),
+  createBranch: (data) => api.post('/organization/branches', data),
+  updateBranch: (id, data) => api.put(`/organization/branches/${id}`, data),
+  deleteBranch: (id) => api.delete(`/organization/branches/${id}`),
+  // Departments
+  getDepartments: () => api.get('/organization/departments'),
+  createDepartment: (data) => api.post('/organization/departments', data),
+  deleteDepartment: (id) => api.delete(`/organization/departments/${id}`),
+  // Designations
+  getDesignations: () => api.get('/organization/designations'),
+  createDesignation: (data) => api.post('/organization/designations', data),
+  deleteDesignation: (id) => api.delete(`/organization/designations/${id}`),
+  // Documents
+  getDocuments: () => api.get('/organization/documents'),
+  createDocument: (data) => api.post('/organization/documents', data),
+  deleteDocument: (id) => api.delete(`/organization/documents/${id}`),
 };
 
 // ─── Labour Service (Contractor) ──────────────────────────────────────────

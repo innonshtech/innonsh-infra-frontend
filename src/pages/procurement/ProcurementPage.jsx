@@ -22,6 +22,7 @@ const statusBadge = {
   DRAFT: { cls: 'badge-gray', icon: FileText, label: 'Draft' },
   SENT: { cls: 'badge-blue', icon: Truck, label: 'Sent' },
   RECEIVED: { cls: 'badge-green', icon: Package, label: 'Received' },
+  ORDERED: { cls: 'badge-blue', icon: CheckCircle, label: 'PO Created' },
 };
 
 export default function ProcurementPage() {
@@ -38,23 +39,24 @@ export default function ProcurementPage() {
   const [processing, setProcessing] = useState(false);
   const toast = useToast();
 
-  useEffect(() => { loadData(); }, [tab]);
+  useEffect(() => { loadData(true); }, []);
 
-  const loadData = async () => {
+  const loadData = async (showSpinner = true) => {
     try {
-      setLoading(true);
-      if (tab === 'requests') {
-        const res = await procurementService.getRequests();
-        setRequests(res.data?.data || res.data || []);
-      } else if (tab === 'vendors') {
-        const res = await procurementService.getVendors();
-        setVendors(res.data?.data || res.data || []);
-      } else {
-        const res = await procurementService.getPOs();
-        setPOs(res.data?.data || res.data || []);
-      }
-    } catch { toast.error('Failed to load data'); }
-    finally { setLoading(false); }
+      if (showSpinner) setLoading(true);
+      const [requestsRes, vendorsRes, posRes] = await Promise.all([
+        procurementService.getRequests(),
+        procurementService.getVendors(),
+        procurementService.getPOs()
+      ]);
+      setRequests(requestsRes.data?.data || requestsRes.data || []);
+      setVendors(vendorsRes.data?.data || vendorsRes.data || []);
+      setPOs(posRes.data?.data || posRes.data || []);
+    } catch { 
+      toast.error('Failed to load data'); 
+    } finally { 
+      if (showSpinner) setLoading(false); 
+    }
   };
 
   const handleApprove = async (id) => {
@@ -142,7 +144,7 @@ export default function ProcurementPage() {
                             <button className="btn btn-sm btn-ghost text-danger" onClick={() => handleReject(r.id)} disabled={processing}>Reject</button>
                           </>
                         )}
-                        {r.status === 'APPROVED' && (
+                        {r.status === 'APPROVED' && (!r._count || r._count.purchaseOrders === 0) && (
                           <button className="btn btn-sm btn-ghost text-primary" onClick={() => setShowPOModal(r)}>Create PO</button>
                         )}
                       </div>
@@ -211,7 +213,7 @@ export default function ProcurementPage() {
       {showCreate && <CreateRequestModal onClose={() => setShowCreate(false)} onCreated={loadData} />}
       {showVendorCreate && <CreateVendorModal onClose={() => setShowVendorCreate(false)} onCreated={loadData} />}
       {showPOModal && <CreatePOModal request={showPOModal} onClose={() => setShowPOModal(null)} onCreated={loadData} />}
-      {showReceiveModal && <ReceivePOModal po={showReceiveModal} onClose={() => setShowReceiveModal(null)} onCreated={loadData} />}
+      {showReceiveModal && <ReceivePOModal po={showReceiveModal} onClose={() => setShowReceiveModal(null)} onReceived={loadData} />}
 
       <ConfirmModal
         isOpen={deleteConfig.show}

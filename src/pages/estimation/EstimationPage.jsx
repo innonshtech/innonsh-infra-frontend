@@ -51,11 +51,16 @@ export default function EstimationPage() {
 
   const confirmDelete = async () => {
     try {
+      setLoading(true);
       await estimationService.delete?.(deleteConfig.estimationId);
       toast.success('Estimation deleted');
       setDeleteConfig({ show: false, estimationId: null });
-      fetchEstimations();
-    } catch { toast.error('Failed to delete'); }
+      await fetchEstimations();
+    } catch (err) {
+      console.error('[Delete Estimation Error]', err);
+      toast.error('Failed to delete: ' + (err.response?.data?.message || err.message));
+      setLoading(false);
+    }
   };
 
   if (selectedEstimation) {
@@ -381,11 +386,11 @@ function BOQEditor({ estimation, onBack }) {
   const [creatingVersion, setCreatingVersion] = useState(false);
   const toast = useToast();
 
-  useEffect(() => { loadEstimation(); loadCatalog(); }, []);
+  useEffect(() => { loadEstimation(true); loadCatalog(); }, []);
 
-  const loadEstimation = async () => {
+  const loadEstimation = async (showSpinner = false) => {
     try {
-      setLoading(true);
+      if (showSpinner) setLoading(true);
       const res = await estimationService.getById(estimation.id);
       const data = res.data?.data || res.data;
       if (data?.versions?.length) {
@@ -395,7 +400,7 @@ function BOQEditor({ estimation, onBack }) {
         setItems(latest.items || []);
       }
     } catch { toast.error('Failed to load BOQ data'); }
-    finally { setLoading(false); }
+    finally { if (showSpinner) setLoading(false); }
   };
 
   const loadCatalog = async () => {
@@ -450,11 +455,15 @@ function BOQEditor({ estimation, onBack }) {
     t.name.toLowerCase().includes((catalogSearch || newItem.description || '').toLowerCase())
   );
 
+  const [addingItem, setAddingItem] = useState(false);
+
   const addItem = async () => {
+    if (addingItem) return;
     if (!newItem.description || !newItem.quantity || !newItem.rate) {
       toast.warning('Fill in Description, Qty, and Rate'); return;
     }
     try {
+      setAddingItem(true);
       await estimationService.addItem(estimation.id, {
         inventoryItemId: newItem.inventoryItemId || undefined,
         description: newItem.description,
@@ -467,15 +476,22 @@ function BOQEditor({ estimation, onBack }) {
       loadEstimation();
     } catch (err) {
       toast.error('Failed to add item: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setAddingItem(false);
     }
   };
 
   const deleteItem = async (itemId) => {
     try {
+      setLoading(true);
       await estimationService.deleteItem(estimation.id, itemId);
       toast.success('Item removed');
-      loadEstimation();
-    } catch { toast.error('Failed to remove item'); }
+      await loadEstimation(true);
+    } catch (err) {
+      console.error('[DeleteItem Error]', err);
+      toast.error('Failed to remove item: ' + (err.response?.data?.message || err.message));
+      setLoading(false);
+    }
   };
 
   const handleStartEdit = (item) => {
@@ -817,8 +833,13 @@ function BOQEditor({ estimation, onBack }) {
                     {newItem.quantity && newItem.rate ? Number(newItem.quantity * newItem.rate).toLocaleString('en-IN') : '—'}
                   </td>
                   <td>
-                    <button className="btn btn-icon btn-ghost btn-sm" style={{ color: 'var(--accent-secondary)' }} onClick={addItem}>
-                      <Plus size={14} />
+                    <button 
+                      className="btn btn-sm btn-primary" 
+                      disabled={addingItem} 
+                      onClick={addItem}
+                      style={{ minWidth: '70px', padding: '4px 12px', fontSize: '12px' }}
+                    >
+                      {addingItem ? 'Saving...' : 'Save'}
                     </button>
                   </td>
                 </tr>
