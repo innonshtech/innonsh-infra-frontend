@@ -9,7 +9,7 @@ import {
   FolderKanban, Users, ListTree, PieChart as PieChartIcon, 
   Plus, ChevronDown, ChevronRight, Edit2, Trash2, 
   Calendar, CheckCircle2, AlertCircle, Clock, MoreVertical,
-  Activity, BarChart3, Wallet, Upload, Camera, UserCheck
+  Activity, BarChart3, Wallet, Upload, Camera, UserCheck, MapPin
 } from 'lucide-react';
 import { 
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
@@ -18,6 +18,7 @@ import {
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import './ProjectDetail.css';
 import CompletionProofViewModal from '../../components/project/CompletionProofViewModal';
+import ProjectPlanningTab from '../../components/project/ProjectPlanningTab';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -26,7 +27,7 @@ export default function ProjectDetailPage() {
   
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
@@ -77,13 +78,16 @@ export default function ProjectDetailPage() {
       }
     >
       <div className="labour-tab-bar" style={{ background: 'transparent' }}>
+        <button className={`labour-tab ${activeTab === 'info' ? 'act' : ''}`} onClick={() => setActiveTab('info')}>Project Information</button>
         <button className={`labour-tab ${activeTab === 'overview' ? 'act' : ''}`} onClick={() => setActiveTab('overview')}>{t('overview')}</button>
         <button className={`labour-tab ${activeTab === 'wbs' ? 'act' : ''}`} onClick={() => setActiveTab('wbs')}>{t('wbs_jobs')}</button>
         <button className={`labour-tab ${activeTab === 'team' ? 'act' : ''}`} onClick={() => setActiveTab('team')}>{t('team')}</button>
         <button className={`labour-tab ${activeTab === 'finance' ? 'act' : ''}`} onClick={() => setActiveTab('finance')}>{t('financials')}</button>
+        <button className={`labour-tab ${activeTab === 'planning' ? 'act' : ''}`} onClick={() => setActiveTab('planning')}>Planning</button>
       </div>
 
       <div className="hub-content">
+        {activeTab === 'info' && <ProjectInfo project={project} onRefresh={fetchProjectDetail} />}
         {activeTab === 'overview' && <ProjectOverview project={project} tasks={tasks} />}
         {activeTab === 'wbs' && (
           <ProjectWBS 
@@ -99,6 +103,7 @@ export default function ProjectDetailPage() {
         )}
         {activeTab === 'team' && <ProjectTeam project={project} onInvite={() => setShowMemberModal(true)} onRemoveMember={setMemberToRemove} />}
         {activeTab === 'finance' && <ProjectFinance project={project} />}
+        {activeTab === 'planning' && <ProjectPlanningTab projectId={id} />}
       </div>
 
       <ConfirmModal 
@@ -157,6 +162,381 @@ export default function ProjectDetailPage() {
         />
       )}
     </PageWrapper>
+  );
+}
+
+/* ─── Project Info Tab ─────────────────────────────────────────────────── */
+function ProjectInfo({ project, onRefresh }) {
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
+
+  const [form, setForm] = useState({
+    name: '',
+    code: '',
+    projectType: 'RESIDENTIAL',
+    status: 'PLANNED',
+    priority: 'MEDIUM',
+    description: '',
+    clientName: '',
+    clientContactPerson: '',
+    clientPhone: '',
+    clientEmail: '',
+    contractNumber: '',
+    workOrderNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    country: 'India',
+    pincode: '',
+    googleMapsUrl: '',
+  });
+
+  const handleOpenEditModal = () => {
+    setForm({
+      name: project.name || '',
+      code: project.code || '',
+      projectType: project.projectType || 'RESIDENTIAL',
+      status: project.status || 'PLANNED',
+      priority: project.priority || 'MEDIUM',
+      description: project.description || '',
+      clientName: project.clientName || '',
+      clientContactPerson: project.clientContactPerson || '',
+      clientPhone: project.clientPhone || '',
+      clientEmail: project.clientEmail || '',
+      contractNumber: project.contractNumber || '',
+      workOrderNumber: project.workOrderNumber || '',
+      address: project.address || '',
+      city: project.city || '',
+      state: project.state || '',
+      country: project.country || 'India',
+      pincode: project.pincode || '',
+      googleMapsUrl: project.googleMapsUrl || '',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      const payload = {
+        name: form.name,
+        code: form.code || null,
+        projectType: form.projectType || null,
+        status: form.status || null,
+        priority: form.priority || null,
+        description: form.description || null,
+        clientName: form.clientName || null,
+        clientContactPerson: form.clientContactPerson || null,
+        clientPhone: form.clientPhone || null,
+        clientEmail: form.clientEmail || null,
+        contractNumber: form.contractNumber || null,
+        workOrderNumber: form.workOrderNumber || null,
+        address: form.address || null,
+        city: form.city || null,
+        state: form.state || null,
+        country: form.country || null,
+        pincode: form.pincode || null,
+        googleMapsUrl: form.googleMapsUrl || null,
+      };
+      await projectService.update(project.id, payload);
+      toast.success('Project details updated successfully');
+      setShowEditModal(false);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update project details');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+      {/* Header section with Edit button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+        <button className="btn btn-secondary btn-sm" onClick={handleOpenEditModal}>
+          <Edit2 size={13} style={{ marginRight: 6 }} /> Edit Info
+        </button>
+      </div>
+
+      <div className="overview-grid">
+        <div className="flex flex-col gap-xl">
+          {/* Card 1: Basic Information */}
+          <div className="card" style={{ padding: 'var(--space-xl)', background: 'var(--bg-surface)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-md)' }}>
+              <FolderKanban size={18} className="text-primary" />
+              <h3 className="card-title" style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Basic Information</h3>
+            </div>
+            
+            <div className="flex flex-col gap-md" style={{ marginTop: 'var(--space-md)' }}>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)' }}>
+                <span className="text-muted text-sm">Project Name</span>
+                <span className="font-semibold text-sm">{project.name}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Project Code</span>
+                <span className="font-semibold text-sm">{project.code || '—'}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Project Type</span>
+                <span className="font-semibold text-sm" style={{ textTransform: 'capitalize' }}>
+                  {project.projectType ? project.projectType.toLowerCase() : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px', alignItems: 'center' }}>
+                <span className="text-muted text-sm">Project Status</span>
+                <span className="badge" style={{
+                  textTransform: 'capitalize',
+                  background: project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? 'rgba(59, 130, 246, 0.1)' : project.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(156, 163, 175, 0.1)',
+                  color: project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? '#3b82f6' : project.status === 'COMPLETED' ? '#10b981' : '#9ca3af',
+                  border: `1px solid ${project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? 'rgba(59, 130, 246, 0.2)' : project.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(156, 163, 175, 0.2)'}`,
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 600
+                }}>{project.status.toLowerCase()}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px', alignItems: 'center' }}>
+                <span className="text-muted text-sm">Project Priority</span>
+                <span className="badge" style={{
+                  textTransform: 'capitalize',
+                  background: project.priority === 'HIGH' ? 'rgba(239, 68, 68, 0.1)' : project.priority === 'MEDIUM' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  color: project.priority === 'HIGH' ? '#ef4444' : project.priority === 'MEDIUM' ? '#f59e0b' : '#10b981',
+                  border: `1px solid ${project.priority === 'HIGH' ? 'rgba(239, 68, 68, 0.2)' : project.priority === 'MEDIUM' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 600
+                }}>{project.priority ? project.priority.toLowerCase() : 'Medium'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Description Card */}
+          <div className="card" style={{ padding: 'var(--space-xl)', background: 'var(--bg-surface)' }}>
+            <h3 className="card-title" style={{ fontSize: '15px', fontWeight: 700 }}>Project Description</h3>
+            <p className="text-sm text-primary" style={{ marginTop: 'var(--space-md)', lineHeight: 1.6, fontSize: '13px', color: 'var(--text-secondary)' }}>
+              {project.description || 'No project description provided.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-xl">
+          {/* Card 2: Client Information */}
+          <div className="card" style={{ padding: 'var(--space-xl)', background: 'var(--bg-surface)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-md)' }}>
+              <Users size={18} className="text-primary" />
+              <h3 className="card-title" style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Client Information</h3>
+            </div>
+            
+            <div className="flex flex-col gap-md" style={{ marginTop: 'var(--space-md)' }}>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)' }}>
+                <span className="text-muted text-sm">Client Name</span>
+                <span className="font-semibold text-sm">{project.clientName || '—'}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Contact Person</span>
+                <span className="font-semibold text-sm">{project.clientContactPerson || '—'}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Mobile Number</span>
+                <span className="font-semibold text-sm">{project.clientPhone || '—'}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Email</span>
+                <span className="font-semibold text-sm">{project.clientEmail || '—'}</span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Contract Number</span>
+                <span className="font-semibold text-sm">{project.contractNumber || '—'}</span>
+              </div>
+              <div className="flex justify-between pb-sm" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Work Order Number</span>
+                <span className="font-semibold text-sm">{project.workOrderNumber || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Location Details */}
+          <div className="card" style={{ padding: 'var(--space-xl)', background: 'var(--bg-surface)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-md)' }}>
+              <MapPin size={18} className="text-primary" />
+              <h3 className="card-title" style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Location Details</h3>
+            </div>
+            
+            <div className="flex flex-col gap-md" style={{ marginTop: 'var(--space-md)' }}>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)' }}>
+                <span className="text-muted text-sm">Site Address</span>
+                <span className="font-semibold text-sm" style={{ maxWidth: '60%', textAlign: 'right', whiteSpace: 'pre-wrap' }}>
+                  {project.address || '—'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">City / State</span>
+                <span className="font-semibold text-sm">
+                  {project.city || project.state ? `${project.city || ''}${project.city && project.state ? ', ' : ''}${project.state || ''}` : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Country / Pincode</span>
+                <span className="font-semibold text-sm">
+                  {project.country || project.pincode ? `${project.country || ''}${project.country && project.pincode ? ' - ' : ''}${project.pincode || ''}` : '—'}
+                </span>
+              </div>
+              <div className="flex justify-between pb-sm" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <span className="text-muted text-sm">Google Maps</span>
+                <span className="font-semibold text-sm">
+                  {project.googleMapsUrl ? (
+                    project.googleMapsUrl.startsWith('http') ? (
+                      <a href={project.googleMapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', textDecoration: 'underline' }}>Open Maps Link</a>
+                    ) : project.googleMapsUrl
+                  ) : '—'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '750px', width: '90%' }}>
+            <div className="modal-header">
+              <h3>Edit Project Information</h3>
+              <button className="btn btn-icon btn-ghost" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleSave}>
+              <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px' }}>
+                
+                {/* 1. Basic Information */}
+                <div>
+                  <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>1. Basic Information</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Project Name *</label>
+                      <input type="text" required className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Project Code</label>
+                      <input type="text" className="form-input" value={form.code} onChange={e => setForm({...form, code: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Project Type</label>
+                      <select className="form-input" value={form.projectType} onChange={e => setForm({...form, projectType: e.target.value})}>
+                        <option value="RESIDENTIAL">Residential</option>
+                        <option value="COMMERCIAL">Commercial</option>
+                        <option value="INDUSTRIAL">Industrial</option>
+                        <option value="INFRASTRUCTURE">Infrastructure</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Project Status</label>
+                      <select className="form-input" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                        <option value="PLANNED">Planned</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="SUSPENDED">Suspended</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Project Priority</label>
+                      <select className="form-input" value={form.priority} onChange={e => setForm({...form, priority: e.target.value})}>
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Description</label>
+                      <textarea className="form-input" rows="3" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Client Information */}
+                <div>
+                  <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>2. Client Information</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Client Name</label>
+                      <input type="text" className="form-input" value={form.clientName} onChange={e => setForm({...form, clientName: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Contact Person</label>
+                      <input type="text" className="form-input" value={form.clientContactPerson} onChange={e => setForm({...form, clientContactPerson: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Mobile Number</label>
+                      <input type="text" className="form-input" value={form.clientPhone} onChange={e => setForm({...form, clientPhone: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Email</label>
+                      <input type="email" className="form-input" value={form.clientEmail} onChange={e => setForm({...form, clientEmail: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Contract Number</label>
+                      <input type="text" className="form-input" value={form.contractNumber} onChange={e => setForm({...form, contractNumber: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Work Order Number</label>
+                      <input type="text" className="form-input" value={form.workOrderNumber} onChange={e => setForm({...form, workOrderNumber: e.target.value})} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Location Details */}
+                <div>
+                  <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>3. Location Details</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Site Address</label>
+                      <textarea className="form-input" rows="2" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>City</label>
+                      <input type="text" className="form-input" value={form.city} onChange={e => setForm({...form, city: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>State</label>
+                      <input type="text" className="form-input" value={form.state} onChange={e => setForm({...form, state: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Country</label>
+                      <input type="text" className="form-input" value={form.country} onChange={e => setForm({...form, country: e.target.value})} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px' }}>Pincode</label>
+                      <input type="text" className="form-input" value={form.pincode} onChange={e => setForm({...form, pincode: e.target.value})} />
+                    </div>
+                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Google Maps Location Link / Address</label>
+                      <input type="text" className="form-input" placeholder="e.g. https://maps.google.com/?q=..." value={form.googleMapsUrl} onChange={e => setForm({...form, googleMapsUrl: e.target.value})} />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" disabled={submitting} onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Save Info'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

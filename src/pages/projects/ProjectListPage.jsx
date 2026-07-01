@@ -265,7 +265,28 @@ export default function ProjectListPage() {
 }
 
 function CreateProjectModal({ onClose, onCreated, erpType }) {
-  const [form, setForm] = useState({ name: '', description: '', status: 'PLANNED', budget: '', clientName: '' });
+  const [form, setForm] = useState({
+    name: '',
+    code: '',
+    projectType: 'RESIDENTIAL',
+    status: 'PLANNED',
+    priority: 'MEDIUM',
+    budget: '',
+    area: '',
+    description: '',
+    clientName: '',
+    clientContactPerson: '',
+    clientPhone: '',
+    clientEmail: '',
+    contractNumber: '',
+    workOrderNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    country: 'India',
+    pincode: '',
+    googleMapsUrl: '',
+  });
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
@@ -276,10 +297,25 @@ function CreateProjectModal({ onClose, onCreated, erpType }) {
       setSubmitting(true);
       const payload = {
         name: form.name,
-        description: form.description || undefined,
+        code: form.code || undefined,
+        projectType: form.projectType || undefined,
         status: form.status,
+        priority: form.priority || undefined,
         budget: form.budget ? Number(form.budget) : undefined,
+        area: form.area ? Number(form.area) : undefined,
+        description: form.description || undefined,
         clientName: form.clientName || undefined,
+        clientContactPerson: form.clientContactPerson || undefined,
+        clientPhone: form.clientPhone || undefined,
+        clientEmail: form.clientEmail || undefined,
+        contractNumber: form.contractNumber || undefined,
+        workOrderNumber: form.workOrderNumber || undefined,
+        address: form.address || undefined,
+        city: form.city || undefined,
+        state: form.state || undefined,
+        country: form.country || undefined,
+        pincode: form.pincode || undefined,
+        googleMapsUrl: form.googleMapsUrl || undefined,
       };
       const svc = erpType === 'BUILDER' ? projectService.builderCreate : projectService.create;
       await svc(payload);
@@ -295,44 +331,134 @@ function CreateProjectModal({ onClose, onCreated, erpType }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '750px', width: '90%' }}>
         <div className="modal-header">
           <h3>Create New Project</h3>
           <button className="btn btn-icon btn-ghost" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-            <div className="form-group">
-              <label className="form-label">Project Name *</label>
-              <input className="form-input" placeholder="e.g., Skyline Towers Phase 3" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Client Name</label>
-              <input className="form-input" placeholder="e.g., Rahul Sharma" value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea className="form-input" rows={3} placeholder="Brief description of the project..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} style={{ resize: 'vertical' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <select className="form-select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  <option value="PLANNED">Planned</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="ON_HOLD">On Hold</option>
-                </select>
+          <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px' }}>
+            
+            {/* 1. Basic Information */}
+            <div>
+              <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>1. Basic Information</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Project Name *</label>
+                  <input type="text" required className="form-input" placeholder="e.g., Skyline Towers Phase 3" value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Project Code</label>
+                  <input type="text" className="form-input" placeholder="e.g., PROJ-001" value={form.code} onChange={e => setForm({...form, code: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Project Type</label>
+                  <select className="form-input" value={form.projectType} onChange={e => setForm({...form, projectType: e.target.value})}>
+                    <option value="RESIDENTIAL">Residential</option>
+                    <option value="COMMERCIAL">Commercial</option>
+                    <option value="INDUSTRIAL">Industrial</option>
+                    <option value="INFRASTRUCTURE">Infrastructure</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Project Status</label>
+                  <select className="form-input" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                    <option value="PLANNED">Planned</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="SUSPENDED">Suspended</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Project Priority</label>
+                  <select className="form-input" value={form.priority} onChange={e => setForm({...form, priority: e.target.value})}>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Budget (₹)</label>
+                  <input type="number" className="form-input" placeholder="e.g., 5000000" value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Total Area (sq. ft.)</label>
+                  <input type="number" className="form-input" placeholder="e.g., 25000" value={form.area} onChange={e => setForm({...form, area: e.target.value})} />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Description</label>
+                  <textarea className="form-input" rows="3" placeholder="Brief description of the project..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Budget (₹)</label>
-                <input className="form-input" type="number" placeholder="e.g., 50000000" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
+            </div>
+
+            {/* 2. Client Information */}
+            <div>
+              <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>2. Client Information</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Client Name</label>
+                  <input type="text" className="form-input" placeholder="e.g., Rahul Sharma" value={form.clientName} onChange={e => setForm({...form, clientName: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Contact Person</label>
+                  <input type="text" className="form-input" placeholder="e.g., Manager / Coordinator" value={form.clientContactPerson} onChange={e => setForm({...form, clientContactPerson: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Mobile Number</label>
+                  <input type="text" className="form-input" placeholder="e.g., +91 98765 43210" value={form.clientPhone} onChange={e => setForm({...form, clientPhone: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Email</label>
+                  <input type="email" className="form-input" placeholder="client@example.com" value={form.clientEmail} onChange={e => setForm({...form, clientEmail: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Contract Number</label>
+                  <input type="text" className="form-input" placeholder="e.g., CON-2026-089" value={form.contractNumber} onChange={e => setForm({...form, contractNumber: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Work Order Number</label>
+                  <input type="text" className="form-input" placeholder="e.g., WO-7762-A" value={form.workOrderNumber} onChange={e => setForm({...form, workOrderNumber: e.target.value})} />
+                </div>
               </div>
             </div>
+
+            {/* 3. Location Details */}
+            <div>
+              <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>3. Location Details</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Site Address</label>
+                  <textarea className="form-input" rows="2" placeholder="Enter physical site address..." value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>City</label>
+                  <input type="text" className="form-input" placeholder="e.g., Mumbai" value={form.city} onChange={e => setForm({...form, city: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>State</label>
+                  <input type="text" className="form-input" placeholder="e.g., Maharashtra" value={form.state} onChange={e => setForm({...form, state: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Country</label>
+                  <input type="text" className="form-input" value={form.country} onChange={e => setForm({...form, country: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Pincode</label>
+                  <input type="text" className="form-input" placeholder="e.g., 400001" value={form.pincode} onChange={e => setForm({...form, pincode: e.target.value})} />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Google Maps Location Link / Address</label>
+                  <input type="text" className="form-input" placeholder="e.g., https://maps.google.com/?q=..." value={form.googleMapsUrl} onChange={e => setForm({...form, googleMapsUrl: e.target.value})} />
+                </div>
+              </div>
+            </div>
+
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? <><Loader size={14} className="spin" /> Creating...</> : 'Create Project'}
+              {submitting ? <><Loader size={14} className="spin" style={{ marginRight: 6 }} /> Creating...</> : 'Create Project'}
             </button>
           </div>
         </form>

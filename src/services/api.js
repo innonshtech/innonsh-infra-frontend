@@ -84,6 +84,23 @@ export const projectService = {
   updateTask: (taskId, data) => api.patch(`/contractor/projects/tasks/${taskId}`, data),
   deleteTask: (taskId) => api.delete(`/contractor/projects/tasks/${taskId}`),
   myTasks: () => api.get('/contractor/projects/tasks/my-tasks'),
+  
+  // Project Planning
+  getPlanning: (projectId) => api.get(`/contractor/projects/${projectId}/planning`),
+  updatePlanning: (projectId, data) => api.patch(`/contractor/projects/${projectId}/planning`, data),
+  createPhase: (projectId, data) => api.post(`/contractor/projects/${projectId}/planning/phases`, data),
+  updatePhase: (projectId, phaseId, data) => api.patch(`/contractor/projects/${projectId}/planning/phases/${phaseId}`, data),
+  deletePhase: (projectId, phaseId) => api.delete(`/contractor/projects/${projectId}/planning/phases/${phaseId}`),
+  createMilestone: (projectId, data) => api.post(`/contractor/projects/${projectId}/planning/milestones`, data),
+  updateMilestone: (projectId, milestoneId, data) => api.patch(`/contractor/projects/${projectId}/planning/milestones/${milestoneId}`, data),
+  deleteMilestone: (projectId, milestoneId) => api.delete(`/contractor/projects/${projectId}/planning/milestones/${milestoneId}`),
+  createResourcePlan: (projectId, data) => api.post(`/contractor/projects/${projectId}/planning/resources`, data),
+  updateResourcePlan: (projectId, resourcePlanId, data) => api.patch(`/contractor/projects/${projectId}/planning/resources/${resourcePlanId}`, data),
+  deleteResourcePlan: (projectId, resourcePlanId) => api.delete(`/contractor/projects/${projectId}/planning/resources/${resourcePlanId}`),
+  createRisk: (projectId, data) => api.post(`/contractor/projects/${projectId}/planning/risks`, data),
+  updateRisk: (projectId, riskId, data) => api.patch(`/contractor/projects/${projectId}/planning/risks/${riskId}`, data),
+  deleteRisk: (projectId, riskId) => api.delete(`/contractor/projects/${projectId}/planning/risks/${riskId}`),
+
   // Builder
   builderGetAll: () => api.get('/builder/projects'),
   builderGetById: (id) => api.get(`/builder/projects/${id}`),

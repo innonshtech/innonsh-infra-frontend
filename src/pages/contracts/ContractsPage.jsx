@@ -53,6 +53,7 @@ export default function ContractsPage() {
       const data = {
         ...formData,
         totalValue: parseFloat(formData.totalValue) || 0,
+        paidAmount: parseFloat(formData.paidAmount) || 0,
         retentionPercent: parseFloat(formData.retentionPercent) || 0,
         projectId: formData.projectId || null,
         linkedTaskId: formData.linkedTaskId || null,
@@ -70,6 +71,7 @@ export default function ContractsPage() {
     } catch (err) { 
       console.error(err); 
       toast.error(err.response?.data?.message || 'Failed to save contract');
+      throw err;
     }
   };
 
@@ -246,6 +248,7 @@ export default function ContractsPage() {
 function ContractFormModal({ editing, projects, onSubmit, onClose }) {
   const [wbsTasks, setWbsTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
+  const [submittingModal, setSubmittingModal] = useState(false);
   
   const [form, setForm] = useState(() => {
     if (editing) {
@@ -256,6 +259,7 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
         type: editing.type || 'WORK_ORDER',
         description: editing.description || '',
         totalValue: editing.totalValue || '',
+        paidAmount: editing.paidAmount || '',
         retentionPercent: editing.retentionPercent || '',
         projectId: editing.projectId || '',
         linkedTaskId: editing.linkedTaskId || '',
@@ -267,7 +271,7 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
     }
     return {
       title: '', partyName: '', partyType: 'SUB_CONTRACTOR', type: 'WORK_ORDER',
-      description: '', totalValue: '', retentionPercent: '', projectId: '', linkedTaskId: '',
+      description: '', totalValue: '', paidAmount: '', retentionPercent: '', projectId: '', linkedTaskId: '',
       startDate: '', endDate: '', terms: '', status: 'DRAFT'
     };
   });
@@ -308,13 +312,19 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
+    if (submittingModal) return;
     if (!form.title || !form.partyName) {
       alert('Contract Title and Party Name are strictly required.');
       return;
     }
-    onSubmit(form);
+    try {
+      setSubmittingModal(true);
+      await onSubmit(form);
+    } catch {
+      setSubmittingModal(false);
+    }
   };
 
   return (
@@ -406,8 +416,18 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
                   <input className="form-input font-bold text-lg" style={{ color: 'var(--accent-primary)' }} type="number" placeholder="0.00" value={form.totalValue} onChange={e => setForm({...form, totalValue: e.target.value})} />
                 </div>
                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label text-xs font-bold">Paid Amount (₹)</label>
+                  <input className="form-input font-bold text-lg text-success" type="number" placeholder="0.00" value={form.paidAmount} onChange={e => setForm({...form, paidAmount: e.target.value})} />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Security Retention (%)</label>
-                  <input className="form-input" type="number" step="0.1" placeholder="Default 5%" value={form.retentionPercent} onChange={e => setForm({...form, retentionPercent: e.target.value})} />
+                  <input className="form-input" type="number" step="0.1" placeholder="e.g. 5" value={form.retentionPercent} onChange={e => setForm({...form, retentionPercent: e.target.value})} />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label className="form-label text-xs font-bold">Calculated Retention (₹)</label>
+                  <div className="form-input" style={{ background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', height: '38px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                    ₹{((parseFloat(form.totalValue) || 0) * (parseFloat(form.retentionPercent) || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
                 </div>
                 
                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
@@ -436,9 +456,9 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
           </div>
 
           <div className="modal-footer" style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-primary)' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Dismiss</button>
-            <button type="submit" className="btn btn-primary font-bold px-xl">
-              {editing ? 'Commit Changes' : 'Establish Final Contract'}
+            <button type="button" className="btn btn-secondary" disabled={submittingModal} onClick={onClose}>Dismiss</button>
+            <button type="submit" className="btn btn-primary font-bold px-xl" disabled={submittingModal}>
+              {submittingModal ? 'Saving...' : (editing ? 'Commit Changes' : 'Establish Final Contract')}
             </button>
           </div>
         </form>
