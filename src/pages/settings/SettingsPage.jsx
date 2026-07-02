@@ -3,6 +3,7 @@ import PageWrapper from '../../components/layout/PageWrapper';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { userService, organizationService } from '../../services/api';
+import { supabase, uploadFile } from '../../config/supabase';
 import { 
   Settings, Users, Building, Mail, Plus, Edit2, Shield, Trash2,
   MapPin, FileText, Globe, Sliders, Award, Briefcase, FileCode, HardHat
@@ -163,11 +164,12 @@ function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, updateCompany } = useAuth();
   const [tab, setTab] = useState('profile');
   const toast = useToast();
 
   // State Management
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profile, setProfile] = useState({
     name: '', logo: '', code: '', gstNumber: '', panNumber: '', regNumber: '',
@@ -267,29 +269,61 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
       toast.warning('Logo image must be under 2MB');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setProfile(prev => ({ ...prev, logo: evt.target.result }));
-      toast.success('Logo loaded from PC. Remember to click "Save Changes" to save it!');
-    };
-    reader.readAsDataURL(file);
+    
+    if (supabase) {
+      const uploadToast = toast.info('Uploading logo to cloud storage...');
+      try {
+        const publicUrl = await uploadFile(file);
+        setProfile(prev => ({ ...prev, logo: publicUrl }));
+        toast.dismiss(uploadToast);
+        toast.success('Logo uploaded to cloud successfully! Remember to click "Save Profile Details" to save it!');
+      } catch (err) {
+        console.error('Supabase upload error:', err);
+        toast.dismiss(uploadToast);
+        toast.warning('Cloud upload failed. Falling back to local preview.');
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setProfile(prev => ({ ...prev, logo: evt.target.result }));
+          toast.success('Logo loaded from PC. Remember to click "Save Profile Details" to save it!');
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      toast.warning('Cloud storage not configured. Falling back to local Base64 storage.');
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setProfile(prev => ({ ...prev, logo: evt.target.result }));
+        toast.success('Logo loaded from PC. Remember to click "Save Profile Details" to save it!');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    if (isSavingProfile) return;
+    setIsSavingProfile(true);
     try {
-      await organizationService.updateProfile(profile);
+      const res = await organizationService.updateProfile(profile);
       toast.success('Company profile updated successfully');
+      
+      const updatedData = res.data?.data || res.data;
+      if (updatedData) {
+        updateCompany(updatedData);
+      }
+      
       loadProfile();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update company profile');
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -636,7 +670,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="submit" className="btn btn-primary">Save Profile Details</button>
+                  <button type="submit" className="btn btn-primary" disabled={isSavingProfile}>
+                    {isSavingProfile ? 'Saving...' : 'Save Profile Details'}
+                  </button>
                 </div>
               </div>
             </form>

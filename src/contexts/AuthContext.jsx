@@ -72,6 +72,26 @@ export function AuthProvider({ children }) {
     setCompany(null);
   }, []);
 
+  const updateCompany = useCallback((updatedCompany) => {
+    setCompany(prev => {
+      const newComp = { ...prev, ...updatedCompany };
+      localStorage.setItem('company', JSON.stringify(newComp));
+      return newComp;
+    });
+    setUser(prevUser => {
+      if (!prevUser) return null;
+      const newUser = {
+        ...prevUser,
+        company: {
+          ...(prevUser.company || {}),
+          ...updatedCompany
+        }
+      };
+      localStorage.setItem('user', JSON.stringify(newUser));
+      return newUser;
+    });
+  }, []);
+
   const erpType = company?.erpType || user?.company?.erpType || 'CONTRACTOR';
 
   const hasPermission = useCallback((permission) => {
@@ -97,6 +117,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     hasPermission,
+    updateCompany,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

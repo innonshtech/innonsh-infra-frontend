@@ -77,7 +77,6 @@ export default function Sidebar() {
             <span className="sidebar-brand-name" title={user?.company?.name || 'Innonsh Infra'}>
               {user?.company?.name || 'Innonsh Infra'}
             </span>
-            <span className="sidebar-brand-type">{erpType}</span>
           </div>
         )}
         <button

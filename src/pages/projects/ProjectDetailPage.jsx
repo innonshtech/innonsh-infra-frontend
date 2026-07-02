@@ -19,6 +19,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 import './ProjectDetail.css';
 import CompletionProofViewModal from '../../components/project/CompletionProofViewModal';
 import ProjectPlanningTab from '../../components/project/ProjectPlanningTab';
+import { supabase, uploadFile } from '../../config/supabase';
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -877,16 +878,39 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
     loadPeople();
   }, [projectId]);
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.warning('Photo must be under 5MB'); return; }
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setPhotoPreview(evt.target.result);
-      setForm(f => ({ ...f, imageUrl: evt.target.result }));
-    };
-    reader.readAsDataURL(file);
+    
+    if (supabase) {
+      const uploadToast = toast.info('Uploading photo to cloud storage...');
+      try {
+        const publicUrl = await uploadFile(file);
+        setPhotoPreview(publicUrl);
+        setForm(f => ({ ...f, imageUrl: publicUrl }));
+        toast.dismiss(uploadToast);
+        toast.success('Photo uploaded to cloud successfully!');
+      } catch (err) {
+        console.error('Supabase upload error:', err);
+        toast.dismiss(uploadToast);
+        toast.warning('Cloud upload failed. Falling back to local preview.');
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setPhotoPreview(evt.target.result);
+          setForm(f => ({ ...f, imageUrl: evt.target.result }));
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      toast.warning('Cloud storage not configured. Falling back to local Base64 storage.');
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setPhotoPreview(evt.target.result);
+        setForm(f => ({ ...f, imageUrl: evt.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const addSubTaskRow = () => {
@@ -1268,16 +1292,39 @@ function ProgressUpdateModal({ task, onClose, onRefresh }) {
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.warning('Photo must be under 5MB'); return; }
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setPhotoPreview(evt.target.result);
-      setForm(f => ({ ...f, imageUrl: evt.target.result }));
-    };
-    reader.readAsDataURL(file);
+    
+    if (supabase) {
+      const uploadToast = toast.info('Uploading photo to cloud storage...');
+      try {
+        const publicUrl = await uploadFile(file);
+        setPhotoPreview(publicUrl);
+        setForm(f => ({ ...f, imageUrl: publicUrl }));
+        toast.dismiss(uploadToast);
+        toast.success('Photo uploaded to cloud successfully!');
+      } catch (err) {
+        console.error('Supabase upload error:', err);
+        toast.dismiss(uploadToast);
+        toast.warning('Cloud upload failed. Falling back to local preview.');
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setPhotoPreview(evt.target.result);
+          setForm(f => ({ ...f, imageUrl: evt.target.result }));
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      toast.warning('Cloud storage not configured. Falling back to local Base64 storage.');
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setPhotoPreview(evt.target.result);
+        setForm(f => ({ ...f, imageUrl: evt.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
