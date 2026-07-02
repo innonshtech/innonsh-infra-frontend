@@ -48,6 +48,7 @@ const PERMISSION_GROUPS = [
 const ALL_PERM_IDS = PERMISSION_GROUPS.flatMap(g => g.perms.map(p => p.id));
 
 const PREDEFINED_ROLES = [
+  { name: 'Owner', perms: ['*'] },
   { name: 'Project Manager', perms: [...ALL_PERM_IDS] },
   { name: 'Site Supervisor', perms: [
     'projects.view', 'projects.update', 'tasks.manage',
@@ -76,8 +77,7 @@ const PREDEFINED_ROLES = [
   { name: 'Store Keeper', perms: [
     'inventory.view', 'inventory.manage',
     'procurement.view'
-  ]},
-  { name: 'Custom', perms: [] }
+  ]}
 ];
 
 const getRoleFromPermissions = (permissions = []) => {
@@ -90,8 +90,9 @@ const getRoleFromPermissions = (permissions = []) => {
 
 // Permission Checklist Component
 function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
-  const allCheckedGlobal = ALL_PERM_IDS.every(id => permissions.includes(id));
-  const someCheckedGlobal = ALL_PERM_IDS.some(id => permissions.includes(id));
+  const isOwner = permissions.includes('*');
+  const allCheckedGlobal = isOwner || ALL_PERM_IDS.every(id => permissions.includes(id));
+  const someCheckedGlobal = !isOwner && ALL_PERM_IDS.some(id => permissions.includes(id));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
       <label style={{
@@ -101,39 +102,43 @@ function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
         color: allCheckedGlobal ? '#fff' : 'inherit',
         border: '1px solid var(--border-secondary)',
         borderRadius: 'var(--radius-md)',
-        cursor: 'pointer',
+        cursor: isOwner ? 'not-allowed' : 'pointer',
+        opacity: isOwner ? 0.8 : 1,
         fontWeight: 700, fontSize: '13px',
         transition: 'all 0.2s ease'
       }}>
         <input
           type="checkbox"
           checked={allCheckedGlobal}
+          disabled={isOwner}
           ref={el => { if (el) el.indeterminate = someCheckedGlobal && !allCheckedGlobal; }}
           onChange={() => onToggleGroup(ALL_PERM_IDS, !allCheckedGlobal)}
         />
-        Full Access — All Modules
+        Full Access — All Modules (Owner)
       </label>
       {PERMISSION_GROUPS.map(group => {
         const groupPermIds = group.perms.map(p => p.id);
-        const allChecked = groupPermIds.every(id => permissions.includes(id));
-        const someChecked = groupPermIds.some(id => permissions.includes(id));
+        const allChecked = isOwner || groupPermIds.every(id => permissions.includes(id));
+        const someChecked = !isOwner && groupPermIds.some(id => permissions.includes(id));
         return (
           <div key={group.key} style={{ 
             border: '1px solid var(--border-secondary)', 
             borderRadius: 'var(--radius-md)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            opacity: isOwner ? 0.8 : 1
           }}>
             <label style={{ 
               display: 'flex', alignItems: 'center', gap: '8px', 
               padding: '8px 12px', 
               background: 'var(--bg-secondary)', 
-              cursor: 'pointer',
+              cursor: isOwner ? 'not-allowed' : 'pointer',
               fontWeight: 600, fontSize: '13px',
               borderBottom: '1px solid var(--border-secondary)'
             }}>
               <input 
                 type="checkbox" 
                 checked={allChecked}
+                disabled={isOwner}
                 ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }}
                 onChange={() => onToggleGroup(groupPermIds, !allChecked)}
               />
@@ -143,13 +148,14 @@ function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
               {group.perms.map(p => (
                 <label key={p.id} style={{ 
                   display: 'flex', alignItems: 'center', gap: '6px', 
-                  cursor: 'pointer', padding: '4px 12px 4px 0',
+                  cursor: isOwner ? 'not-allowed' : 'pointer', padding: '4px 12px 4px 0',
                   fontSize: '12px', color: 'var(--text-secondary)',
                   minWidth: '110px'
                 }}>
                   <input 
                     type="checkbox" 
-                    checked={permissions.includes(p.id)}
+                    checked={isOwner || permissions.includes(p.id)}
+                    disabled={isOwner}
                     onChange={() => onToggle(p.id)}
                   />
                   {p.label}
@@ -170,6 +176,12 @@ export default function SettingsPage() {
 
   // State Management
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isSavingBranch, setIsSavingBranch] = useState(false);
+  const [isSavingDepartment, setIsSavingDepartment] = useState(false);
+  const [isSavingDesignation, setIsSavingDesignation] = useState(false);
+  const [isSavingDoc, setIsSavingDoc] = useState(false);
+  const [isDeletingMember, setIsDeletingMember] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profile, setProfile] = useState({
     name: '', logo: '', code: '', gstNumber: '', panNumber: '', regNumber: '',
@@ -329,11 +341,15 @@ export default function SettingsPage() {
 
   const handleUpdateSettings = async (e) => {
     e.preventDefault();
+    if (isSavingSettings) return;
+    setIsSavingSettings(true);
     try {
       await organizationService.updateSettings(settings);
       toast.success('Company settings saved successfully');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update settings');
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -369,6 +385,8 @@ export default function SettingsPage() {
 
   const handleSaveBranch = async (e) => {
     e.preventDefault();
+    if (isSavingBranch) return;
+    setIsSavingBranch(true);
     try {
       if (editingBranch) {
         await organizationService.updateBranch(editingBranch.id, branchForm);
@@ -381,6 +399,8 @@ export default function SettingsPage() {
       loadBranches();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save branch');
+    } finally {
+      setIsSavingBranch(false);
     }
   };
 
@@ -409,7 +429,8 @@ export default function SettingsPage() {
 
   const handleAddDepartment = async (e) => {
     e.preventDefault();
-    if (!newDepName.trim()) return;
+    if (!newDepName.trim() || isSavingDepartment) return;
+    setIsSavingDepartment(true);
     try {
       await organizationService.createDepartment({ name: newDepName });
       toast.success('Department created');
@@ -417,6 +438,8 @@ export default function SettingsPage() {
       loadDepartments();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create department');
+    } finally {
+      setIsSavingDepartment(false);
     }
   };
 
@@ -442,7 +465,8 @@ export default function SettingsPage() {
 
   const handleAddDesignation = async (e) => {
     e.preventDefault();
-    if (!newDesName.trim()) return;
+    if (!newDesName.trim() || isSavingDesignation) return;
+    setIsSavingDesignation(true);
     try {
       await organizationService.createDesignation({ name: newDesName });
       toast.success('Designation created');
@@ -450,6 +474,8 @@ export default function SettingsPage() {
       loadDesignations();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create designation');
+    } finally {
+      setIsSavingDesignation(false);
     }
   };
 
@@ -475,6 +501,8 @@ export default function SettingsPage() {
 
   const handleSaveDoc = async (e) => {
     e.preventDefault();
+    if (isSavingDoc) return;
+    setIsSavingDoc(true);
     try {
       await organizationService.createDocument(docForm);
       toast.success('Document uploaded successfully');
@@ -482,6 +510,8 @@ export default function SettingsPage() {
       loadDocuments();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to upload document');
+    } finally {
+      setIsSavingDoc(false);
     }
   };
 
@@ -512,7 +542,8 @@ export default function SettingsPage() {
   };
 
   const confirmDeleteMember = async () => {
-    if (!memberToDelete) return;
+    if (!memberToDelete || isDeletingMember) return;
+    setIsDeletingMember(true);
     try {
       await userService.delete(memberToDelete.id);
       toast.success('Team member removed');
@@ -520,6 +551,7 @@ export default function SettingsPage() {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to remove member');
     } finally {
+      setIsDeletingMember(false);
       setMemberToDelete(null);
     }
   };
@@ -738,7 +770,7 @@ export default function SettingsPage() {
                       onChange={e => setNewDepName(e.target.value)} 
                     />
                   </div>
-                  <button type="submit" className="btn btn-primary w-full">Create Department</button>
+                  <button type="submit" className="btn btn-primary w-full" disabled={isSavingDepartment}>{isSavingDepartment ? 'Creating...' : 'Create Department'}</button>
                 </form>
               </div>
 
@@ -782,7 +814,7 @@ export default function SettingsPage() {
                       onChange={e => setNewDesName(e.target.value)} 
                     />
                   </div>
-                  <button type="submit" className="btn btn-primary w-full">Create Designation</button>
+                  <button type="submit" className="btn btn-primary w-full" disabled={isSavingDesignation}>{isSavingDesignation ? 'Creating...' : 'Create Designation'}</button>
                 </form>
               </div>
 
@@ -901,7 +933,7 @@ export default function SettingsPage() {
                   </select>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-md)' }}>
-                  <button type="submit" className="btn btn-primary">Save Settings</button>
+                   <button type="submit" className="btn btn-primary" disabled={isSavingSettings}>{isSavingSettings ? 'Saving...' : 'Save Settings'}</button>
                 </div>
               </form>
             </div>
@@ -964,7 +996,7 @@ export default function SettingsPage() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowBranchModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editingBranch ? 'Update Branch' : 'Register Branch'}</button>
+                 <button type="submit" className="btn btn-primary" disabled={isSavingBranch}>{isSavingBranch ? 'Saving...' : (editingBranch ? 'Update Branch' : 'Register Branch')}</button>
               </div>
             </form>
           </div>
@@ -1010,7 +1042,7 @@ export default function SettingsPage() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowDocModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save Document</button>
+                 <button type="submit" className="btn btn-primary" disabled={isSavingDoc}>{isSavingDoc ? 'Saving...' : 'Save Document'}</button>
               </div>
             </form>
           </div>
@@ -1028,6 +1060,7 @@ export default function SettingsPage() {
         title="Remove Team Member"
         message={`Are you sure you want to remove ${memberToDelete?.firstName} ${memberToDelete?.lastName} from the company? They will lose access to the platform.`}
         confirmText="Remove Member"
+        disabled={isDeletingMember}
       />
 
       <ConfirmModal 
@@ -1117,10 +1150,11 @@ function InviteMemberModal({ designations = [], onClose, onCreated }) {
               <label className="form-label">Role Template</label>
               <select className="form-input" value={form.role} onChange={handleRoleChange}>
                 <option value="" disabled>Select a role/designation...</option>
+                <option value="Owner">Owner</option>
                 {designations.map(d => (
                   <option key={d.id} value={d.name}>{d.name}</option>
                 ))}
-                <option value="Custom">Custom Role</option>
+                {form.role === 'Custom' && <option value="Custom">Custom Permissions</option>}
               </select>
               <p className="text-xs text-muted mt-xs">Select a designation to auto-fill, or customize below.</p>
             </div>
@@ -1155,6 +1189,10 @@ function EditMemberModal({ designations = [], member, onClose, onUpdated }) {
     const matchedRole = PREDEFINED_ROLES.find(r => [...r.perms].sort().join(',') === sortedUserPerms);
     
     if (matchedRole) {
+      if (matchedRole.name === 'Owner') {
+        setForm(prev => ({ ...prev, role: 'Owner' }));
+        return;
+      }
       const matchedDesignation = designations.find(d => d.name.toLowerCase() === matchedRole.name.toLowerCase());
       if (matchedDesignation) {
         setForm(prev => ({ ...prev, role: matchedDesignation.name }));
@@ -1221,10 +1259,11 @@ function EditMemberModal({ designations = [], member, onClose, onUpdated }) {
               <h4 style={{ margin: '0 0 var(--space-sm) 0', fontSize: '14px' }}>Role Template</h4>
               <select className="form-select" value={form.role} onChange={handleRoleChange}>
                 <option value="" disabled>Select a role/designation...</option>
+                <option value="Owner">Owner</option>
                 {designations.map(d => (
                   <option key={d.id} value={d.name}>{d.name}</option>
                 ))}
-                <option value="Custom">Custom Role</option>
+                {form.role === 'Custom' && <option value="Custom">Custom Permissions</option>}
               </select>
             </div>
             <div className="form-group mb-0">

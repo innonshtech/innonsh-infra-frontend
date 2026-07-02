@@ -3,9 +3,9 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
-import { Search, Bell, ChevronRight, Languages, LogOut, AlertTriangle, AlertCircle, Clock, Info, Check } from 'lucide-react';
+import { Search, Bell, ChevronRight, Languages, LogOut, AlertTriangle, AlertCircle, Clock, Info, Check, Lock, Eye, EyeOff, X } from 'lucide-react';
 import ConfirmModal from '../ui/ConfirmModal';
-import { notificationService } from '../../services/api';
+import { notificationService, authService } from '../../services/api';
 import './Topbar.css';
 
 const routeLabels = {
@@ -32,6 +32,7 @@ export default function Topbar() {
   const toast = useToast();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
@@ -254,6 +255,17 @@ export default function Topbar() {
                 </div>
                 <div className="dropdown-divider" />
                 <button 
+                  className="dropdown-item" 
+                  onClick={() => {
+                    setShowDropdown(false);
+                    setShowChangePasswordModal(true);
+                  }}
+                >
+                  <Lock size={16} />
+                  <span>Change Password</span>
+                </button>
+                <div className="dropdown-divider" />
+                <button 
                   className="dropdown-item text-danger" 
                   onClick={() => {
                     setShowDropdown(false);
@@ -278,6 +290,141 @@ export default function Topbar() {
         message="Are you sure you want to log out of your account? Any unsaved sessions will end."
         confirmText="Logout"
       />
+
+      {/* Change Password Dialog Modal */}
+      <ChangePasswordModal 
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+      />
     </>
+  );
+}
+
+function ChangePasswordModal({ isOpen, onClose }) {
+  const { logout } = useAuth();
+  const toast = useToast();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.warning('Please fill in all fields');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.warning('New password must be at least 8 characters long');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authService.changePassword({ currentPassword, newPassword });
+      toast.success('Password updated successfully! Logging out...');
+      setTimeout(async () => {
+        await logout();
+      }, 1500);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to change password. Verify your current password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+        <div className="modal-header">
+          <h3>Change Your Password</h3>
+          <button className="btn btn-icon btn-ghost" onClick={onClose} disabled={loading}><X size={18} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            
+            <div className="form-group">
+              <label className="form-label">Current Password *</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  className="form-input"
+                  style={{ paddingRight: '40px' }}
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  onClick={() => setShowCurrent(!showCurrent)}
+                >
+                  {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">New Password *</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showNew ? 'text' : 'password'}
+                  className="form-input"
+                  style={{ paddingRight: '40px' }}
+                  placeholder="Min 8 characters"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  onClick={() => setShowNew(!showNew)}
+                >
+                  {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Confirm New Password *</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  className="form-input"
+                  style={{ paddingRight: '40px' }}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  onClick={() => setShowConfirm(!showConfirm)}
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
