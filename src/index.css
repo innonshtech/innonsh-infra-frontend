@@ -631,7 +631,7 @@ ul, ol { list-style: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100 !important;
   animation: fadeIn 150ms ease;
 }
 .modal {

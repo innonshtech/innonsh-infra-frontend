@@ -327,9 +327,13 @@ export const equipmentService = {
   getDeployments: (params) => api.get('/contractor/equipment/deployments/all', { params }),
   deployToProject: (id, data) => api.post(`/contractor/equipment/${id}/deploy`, data),
   endDeployment: (depId) => api.post(`/contractor/equipment/deployments/${depId}/end`),
+  updateDeployment: (depId, data) => api.put(`/contractor/equipment/deployments/${depId}`, data),
+  deleteDeployment: (depId) => api.delete(`/contractor/equipment/deployments/${depId}`),
   // Fuel Logs
   getFuelLogs: (params) => api.get('/contractor/equipment/fuel/all', { params }),
   addFuelLog: (id, data) => api.post(`/contractor/equipment/${id}/fuel`, data),
+  updateFuelLog: (logId, data) => api.put(`/contractor/equipment/fuel/${logId}`, data),
+  deleteFuelLog: (logId) => api.delete(`/contractor/equipment/fuel/${logId}`),
   // Depreciation
   getDepreciation: () => api.get('/contractor/equipment/depreciation/report'),
 };

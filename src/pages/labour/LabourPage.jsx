@@ -4,6 +4,7 @@ import './Labour.css';
 import * as XLSX from 'xlsx';
 import { generatePayrollPDF } from '../../utils/payrollPdf';
 import { useToast } from '../../contexts/ToastContext';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const ROLES = ['Mason', 'Electrician', 'Helper', 'Carpenter', 'Plumber', 'Painter', 'Welder', 'Supervisor'];
 
@@ -23,6 +24,10 @@ export default function LabourPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newWorker, setNewWorker] = useState({ firstName: '', lastName: '', phone: '', role: 'Mason', dailyWage: '', projectId: '' });
   const [saving, setSaving] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editWorker, setEditWorker] = useState(null);
+  const [workerToDelete, setWorkerToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Attendance
   const [attDate, setAttDate] = useState(new Date().toISOString().split('T')[0]);
@@ -35,6 +40,7 @@ export default function LabourPage() {
   // Payroll
   const [payPeriod, setPayPeriod] = useState('week');
   const [payData, setPayData] = useState({ totalPayroll: 0, totalWorkers: 0, breakdown: [] });
+  const [finalizing, setFinalizing] = useState(false);
 
   // Excel Upload
   const [uploadProject, setUploadProject] = useState('');
@@ -198,6 +204,54 @@ export default function LabourPage() {
     if (activeTab === 'wages') loadPayroll();
   }, [activeTab, payPeriod]);
 
+  const handleEditWorker = async (e) => {
+    e.preventDefault();
+    if (saving) return;
+    if (!editWorker.firstName || !editWorker.lastName || !editWorker.dailyWage) {
+      toast.warning('First name, Last name, and Daily wage are required');
+      return;
+    }
+    try {
+      setSaving(true);
+      await labourService.updateWorker(editWorker.id, {
+        firstName: editWorker.firstName,
+        lastName: editWorker.lastName,
+        phone: editWorker.phone || undefined,
+        role: editWorker.role,
+        dailyWage: parseFloat(editWorker.dailyWage),
+        projectId: editWorker.projectId || null,
+        status: editWorker.status
+      });
+      setShowEditModal(false);
+      toast.success('Worker details updated successfully');
+      loadWorkers();
+      loadStats();
+    } catch (e) {
+      console.error(e);
+      toast.error(e.response?.data?.message || 'Failed to update worker');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteWorker = async () => {
+    if (!workerToDelete || isDeleting) return;
+    try {
+      setIsDeleting(true);
+      await labourService.deleteWorker(workerToDelete.id);
+      setWorkerToDelete(null);
+      setShowEditModal(false);
+      toast.success('Worker deleted successfully');
+      loadWorkers();
+      loadStats();
+    } catch (e) {
+      console.error(e);
+      toast.error(e.response?.data?.message || 'Failed to delete worker');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Add worker handler
   const handleAddWorker = async (e) => {
     e.preventDefault();
@@ -355,7 +409,28 @@ export default function LabourPage() {
                     <td>{w.project?.name || '—'}</td>
                     <td>{formatCurrency(w.dailyWage)}</td>
                     <td><span className={`status-pill ${w.status === 'ACTIVE' ? 'p-ok' : 'p-nt'}`}>{w.status === 'ACTIVE' ? 'Active' : 'Inactive'}</span></td>
-                    <td><div className="row-actions"><button className="ra-btn">View</button></div></td>
+                    <td>
+                      <div className="row-actions">
+                        <button 
+                          className="ra-btn"
+                          onClick={() => {
+                            setEditWorker({
+                              id: w.id,
+                              firstName: w.firstName,
+                              lastName: w.lastName,
+                              phone: w.phone || '',
+                              role: w.role,
+                              dailyWage: w.dailyWage || '',
+                              projectId: w.projectId || '',
+                              status: w.status
+                            });
+                            setShowEditModal(true);
+                          }}
+                        >
+                          View / Edit
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -436,8 +511,10 @@ export default function LabourPage() {
                 <button
                   className="btn-pp"
                   style={{ fontSize: 12, padding: '6px 14px' }}
+                  disabled={finalizing}
                   onClick={async () => {
                     try {
+                      setFinalizing(true);
                       const now = new Date();
                       let startDate, endDate;
                       if (payPeriod === 'week') {
@@ -451,13 +528,16 @@ export default function LabourPage() {
                         endDate = now.toISOString().split('T')[0];
                       }
                       await labourService.finalizePayroll({ startDate, endDate });
-                      alert('Payroll finalized! Expense recorded in Finance.');
+                      toast.success('Payroll finalized! Expense recorded in Finance.');
+                      loadPayroll();
                     } catch (err) {
-                      alert(err.response?.data?.message || 'Failed to finalize');
+                      toast.error(err.response?.data?.message || 'Failed to finalize');
+                    } finally {
+                      setFinalizing(false);
                     }
                   }}
                 >
-                  Finalize & Record Expense
+                  {finalizing ? 'Processing...' : 'Finalize & Record Expense'}
                 </button>
               )}
             </div>
@@ -540,6 +620,76 @@ export default function LabourPage() {
           </div>
         </div>
       )}
+
+      {/* EDIT WORKER MODAL */}
+      {showEditModal && editWorker && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="erp-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <span className="modal-title">Edit Worker details</span>
+              <span className="modal-close" onClick={() => setShowEditModal(false)}>×</span>
+            </div>
+            <form onSubmit={handleEditWorker}>
+              <div className="modal-body">
+                <div className="form-2col">
+                  <div className="fld"><label className="fld-lbl">First name *</label><input className="fld-inp" required value={editWorker.firstName} onChange={e => setEditWorker(p => ({ ...p, firstName: e.target.value }))} /></div>
+                  <div className="fld"><label className="fld-lbl">Last name *</label><input className="fld-inp" required value={editWorker.lastName} onChange={e => setEditWorker(p => ({ ...p, lastName: e.target.value }))} /></div>
+                </div>
+                <div className="form-2col">
+                  <div className="fld"><label className="fld-lbl">Phone</label><input className="fld-inp" value={editWorker.phone} onChange={e => setEditWorker(p => ({ ...p, phone: e.target.value }))} /></div>
+                  <div className="fld"><label className="fld-lbl">Status *</label>
+                    <select className="fld-sel" value={editWorker.status} onChange={e => setEditWorker(p => ({ ...p, status: e.target.value }))}>
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-2col">
+                  <div className="fld"><label className="fld-lbl">Role *</label>
+                    <select className="fld-sel" value={editWorker.role} onChange={e => setEditWorker(p => ({ ...p, role: e.target.value }))}>
+                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div className="fld"><label className="fld-lbl">Daily wage (₹) *</label><input className="fld-inp" type="number" required value={editWorker.dailyWage} onChange={e => setEditWorker(p => ({ ...p, dailyWage: e.target.value }))} /></div>
+                </div>
+                <div className="fld"><label className="fld-lbl">Assign to project</label>
+                  <select className="fld-sel" value={editWorker.projectId} onChange={e => setEditWorker(p => ({ ...p, projectId: e.target.value }))}>
+                    <option value="">No project</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="modal-foot" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <button 
+                  type="button" 
+                  className="btn-gp" 
+                  style={{ background: '#FEF2F2', borderColor: '#FCA5A5', color: '#DC2626', padding: '8px 16px' }}
+                  onClick={() => setWorkerToDelete(editWorker)}
+                >
+                  Delete Worker
+                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="btn-gp" onClick={() => setShowEditModal(false)}>Cancel</button>
+                  <button type="submit" className="btn-pp" disabled={saving}>
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Worker Confirmation Modal */}
+      <ConfirmModal 
+        isOpen={!!workerToDelete}
+        onClose={() => setWorkerToDelete(null)}
+        onConfirm={handleDeleteWorker}
+        title="Delete Worker profile"
+        message={`Are you sure you want to permanently delete the profile of "${workerToDelete?.firstName} ${workerToDelete?.lastName}"? This action cannot be undone.`}
+        confirmText="Delete Worker"
+        disabled={isDeleting}
+      />
 
       {/* EXCEL UPLOAD TAB */}
       {activeTab === 'upload' && (

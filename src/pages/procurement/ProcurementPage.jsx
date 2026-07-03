@@ -4,7 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { procurementService, projectService, inventoryService } from '../../services/api';
 import {
   Plus, ShoppingCart, Truck, Users, CheckCircle, XCircle, Clock,
-  Eye, Trash2, FileText, ChevronRight, Package
+  Eye, Trash2, FileText, ChevronRight, Package, Edit2
 } from 'lucide-react';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 
@@ -36,6 +36,8 @@ export default function ProcurementPage() {
   const [showPOModal, setShowPOModal] = useState(null);
   const [showReceiveModal, setShowReceiveModal] = useState(null);
   const [deleteConfig, setDeleteConfig] = useState({ show: false, vendorId: null });
+  const [showVendorEdit, setShowVendorEdit] = useState(false);
+  const [editVendor, setEditVendor] = useState(null);
   const [processing, setProcessing] = useState(false);
   const toast = useToast();
 
@@ -159,18 +161,32 @@ export default function ProcurementPage() {
       ) : tab === 'vendors' ? (
         <div className="table-container">
           <table className="data-table">
-            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Name</th><th>Service Type</th><th>Email</th><th>Phone</th><th>Address</th><th>Actions</th></tr></thead>
             <tbody>
               {vendors.map(v => (
                 <tr key={v.id}>
                   <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{v.name}</td>
+                  <td>{v.serviceType ? <span className="badge badge-blue">{v.serviceType}</span> : '—'}</td>
                   <td>{v.email || '—'}</td>
                   <td>{v.phone || '—'}</td>
                   <td className="text-sm">{v.address || '—'}</td>
                   <td>
-                    <button className="btn btn-icon btn-ghost btn-sm text-danger" onClick={() => handleDeleteVendor(v.id)}>
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex gap-xs">
+                      <button 
+                        className="btn btn-icon btn-ghost btn-sm text-accent" 
+                        title="Edit Vendor"
+                        onClick={() => { setEditVendor(v); setShowVendorEdit(true); }}
+                      >
+                        <Edit2 size={14} style={{ pointerEvents: 'none' }} />
+                      </button>
+                      <button 
+                        className="btn btn-icon btn-ghost btn-sm text-danger" 
+                        title="Delete Vendor"
+                        onClick={() => handleDeleteVendor(v.id)}
+                      >
+                        <Trash2 size={14} style={{ pointerEvents: 'none' }} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -212,6 +228,13 @@ export default function ProcurementPage() {
 
       {showCreate && <CreateRequestModal onClose={() => setShowCreate(false)} onCreated={loadData} />}
       {showVendorCreate && <CreateVendorModal onClose={() => setShowVendorCreate(false)} onCreated={loadData} />}
+      {showVendorEdit && editVendor && (
+        <EditVendorModal 
+          vendor={editVendor} 
+          onClose={() => { setShowVendorEdit(false); setEditVendor(null); }} 
+          onUpdated={loadData} 
+        />
+      )}
       {showPOModal && <CreatePOModal request={showPOModal} onClose={() => setShowPOModal(null)} onCreated={loadData} />}
       {showReceiveModal && <ReceivePOModal po={showReceiveModal} onClose={() => setShowReceiveModal(null)} onReceived={loadData} />}
 
@@ -354,7 +377,7 @@ function CreateRequestModal({ onClose, onCreated }) {
 }
 
 function CreateVendorModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', serviceType: '' });
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
@@ -378,6 +401,7 @@ function CreateVendorModal({ onClose, onCreated }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus /></div>
+            <div className="form-group"><label className="form-label">Service Type</label><input className="form-input" value={form.serviceType} onChange={e => setForm({...form, serviceType: e.target.value})} placeholder="e.g. Fuel, Cement, Transport" /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
               <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
               <div className="form-group"><label className="form-label">Phone</label><input className="form-input" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
@@ -387,6 +411,48 @@ function CreateVendorModal({ onClose, onCreated }) {
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? 'Adding...' : 'Add Vendor'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditVendorModal({ vendor, onClose, onUpdated }) {
+  const [form, setForm] = useState({ name: vendor.name, email: vendor.email || '', phone: vendor.phone || '', address: vendor.address || '', serviceType: vendor.serviceType || '' });
+  const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name) { toast.warning('Vendor name is required'); return; }
+    try {
+      setSubmitting(true);
+      await procurementService.updateVendor(vendor.id, form);
+      toast.success('Vendor updated successfully');
+      onUpdated();
+      onClose();
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to update vendor'); }
+    finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header"><h3>Edit Vendor Details</h3><button className="btn btn-icon btn-ghost" onClick={onClose}>✕</button></div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+            <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus /></div>
+            <div className="form-group"><label className="form-label">Service Type</label><input className="form-input" value={form.serviceType} onChange={e => setForm({...form, serviceType: e.target.value})} placeholder="e.g. Fuel, Cement, Transport" /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+              <div className="form-group"><label className="form-label">Email</label><input className="form-input" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
+              <div className="form-group"><label className="form-label">Phone</label><input className="form-input" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
+            </div>
+            <div className="form-group"><label className="form-label">Address</label><textarea className="form-input" rows={2} value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? 'Saving...' : 'Save Changes'}</button>
           </div>
         </form>
       </div>

@@ -157,14 +157,14 @@ export default function FinancePage() {
                     <div className="flex gap-xs">
                       {inv.status !== 'PAID' && (
                         <button className="ra-btn text-accent" title="Record Payment" onClick={() => { setSelectedInvoice(inv); setShowRecordPayment(true); }}>
-                          <CreditCard size={12} />
+                          <CreditCard size={12} style={{ pointerEvents: 'none' }} />
                         </button>
                       )}
                       <button className="ra-btn" title="Download PDF" onClick={() => generateInvoicePDF(inv)}>
-                        <Download size={12} />
+                        <Download size={12} style={{ pointerEvents: 'none' }} />
                       </button>
                       <button className="ra-btn text-danger" title="Delete Invoice" onClick={() => handleDeleteInvoice(inv.id)}>
-                        <Trash2 size={12} />
+                        <Trash2 size={12} style={{ pointerEvents: 'none' }} />
                       </button>
                     </div>
                   </td>
