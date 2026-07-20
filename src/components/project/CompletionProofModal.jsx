@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, Upload } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { supabase, uploadFile } from '../../config/supabase';
 
 export default function CompletionProofModal({ taskName, onClose, onSubmit }) {
   const [notes, setNotes] = useState('');
@@ -8,18 +9,38 @@ export default function CompletionProofModal({ taskName, onClose, onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       toast.warning('Photo must be under 5MB');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setPhotoPreview(evt.target.result);
-    };
-    reader.readAsDataURL(file);
+
+    if (supabase) {
+      const uploadToast = toast.info('Uploading photo to cloud storage bucket...');
+      try {
+        const publicUrl = await uploadFile(file);
+        setPhotoPreview(publicUrl);
+        toast.dismiss(uploadToast);
+        toast.success('Photo uploaded to cloud bucket!');
+      } catch (err) {
+        console.error('Supabase upload error:', err);
+        toast.dismiss(uploadToast);
+        toast.warning('Cloud upload failed. Falling back to local preview.');
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setPhotoPreview(evt.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setPhotoPreview(evt.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {

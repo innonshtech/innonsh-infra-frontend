@@ -81,7 +81,7 @@ const PREDEFINED_ROLES = [
 ];
 
 const getRoleFromPermissions = (permissions = []) => {
-  if (permissions.includes('*')) return 'Superadmin';
+  if (permissions.includes('*')) return 'Owner';
   if (!permissions || permissions.length === 0) return 'Member';
   const sortedUserPerms = [...permissions].sort().join(',');
   const matchedRole = PREDEFINED_ROLES.find(r => [...r.perms].sort().join(',') === sortedUserPerms);
@@ -950,7 +950,7 @@ export default function SettingsPage() {
                       <tr key={u.id}>
                         <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{u.firstName} {u.lastName}</td>
                         <td><div className="flex items-center gap-xs"><Mail size={13} style={{ color: 'var(--text-muted)' }} />{u.email}</div></td>
-                        <td><span className="badge badge-purple">{getRoleFromPermissions(u.permissions)}</span></td>
+                        <td><span className="badge badge-purple">{u.role?.name || getRoleFromPermissions(u.permissions)}</span></td>
                         <td>{u.isActive ? <span className="badge badge-green">Active</span> : <span className="badge badge-red">Inactive</span>}</td>
                         <td>
                           <div className="flex gap-xs">

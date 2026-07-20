@@ -305,6 +305,11 @@ export const labourService = {
   getAttendance: (params) => api.get('/contractor/labour/attendance', { params }),
   getAttendanceSummary: (params) => api.get('/contractor/labour/attendance/summary', { params }),
   saveAttendance: (records) => api.post('/contractor/labour/attendance', { records }),
+  getPendingApprovals: () => api.get('/contractor/labour/attendance/pending'),
+  approveAttendance: (data) => api.post('/contractor/labour/attendance/approve', data),
+  submitCorrection: (data) => api.post('/contractor/labour/attendance/correct', data),
+  getAuditLogs: () => api.get('/contractor/labour/attendance/audit-logs'),
+  getRegisterMatrix: (params) => api.get('/contractor/labour/attendance/register', { params }),
   // Excel Upload
   getAttendanceTemplate: (projectId) => api.get(`/contractor/labour/attendance/template/${projectId}`),
   uploadAttendance: (data) => api.post('/contractor/labour/attendance/upload', data),

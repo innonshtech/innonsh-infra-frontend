@@ -364,9 +364,9 @@ function CreateProjectModal({ onClose, onCreated, erpType }) {
                   <label className="form-label" style={{ fontSize: '12px' }}>Project Status</label>
                   <select className="form-input" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
                     <option value="PLANNED">Planned</option>
-                    <option value="ACTIVE">Active</option>
+                    <option value="IN_PROGRESS">In Progress</option>
                     <option value="COMPLETED">Completed</option>
-                    <option value="SUSPENDED">Suspended</option>
+                    <option value="ON_HOLD">On Hold</option>
                   </select>
                 </div>
                 <div className="form-group">

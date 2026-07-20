@@ -21,6 +21,38 @@ import CompletionProofViewModal from '../../components/project/CompletionProofVi
 import ProjectPlanningTab from '../../components/project/ProjectPlanningTab';
 import { supabase, uploadFile } from '../../config/supabase';
 
+// ─── Error Boundary to Catch Modal Render Crashes ─────────────────────────
+class ModalErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Modal Render Crash:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="modal-overlay" onClick={this.props.onClose}>
+          <div className="modal p-lg text-center" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
+            <h3 style={{ color: '#ef4444', marginBottom: '12px', fontSize: '16px' }}>Form Render Error</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              {this.state.error?.message || 'An unexpected error occurred while displaying this form.'}
+            </p>
+            <button className="btn btn-secondary" onClick={this.props.onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const { erpType, hasPermission } = useAuth();
@@ -40,6 +72,15 @@ export default function ProjectDetailPage() {
   const { t } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
+
+  const handleOpenAddTaskModal = (pid = null) => {
+    setSelectedParentId(pid);
+    setShowProgressModal(false);
+    setShowEditModal(false);
+    setShowMemberModal(false);
+    setShowTaskModal(true);
+    setActiveTab('wbs');
+  };
 
   useEffect(() => {
     fetchProjectDetail();
@@ -72,9 +113,9 @@ export default function ProjectDetailPage() {
       actions={
         <div className="flex gap-md">
           <button className="btn btn-secondary" onClick={() => navigate('/projects')}>Back</button>
-          <HasPermission required="tasks.manage">
-            <button className="btn btn-primary" onClick={() => { setSelectedParentId(null); setShowTaskModal(true); }}><Plus size={16} /> {t('add_task')}</button>
-          </HasPermission>
+          <button className="btn btn-primary" onClick={(e) => { e.preventDefault(); handleOpenAddTaskModal(null); }}>
+            <Plus size={16} /> {t('add_task')}
+          </button>
         </div>
       }
     >
@@ -96,7 +137,7 @@ export default function ProjectDetailPage() {
             isBuilder={isBuilder} 
             initialTasks={tasks} 
             onRefresh={fetchProjectDetail} 
-            onAddTask={(pid) => { setSelectedParentId(pid); setShowTaskModal(true); }}
+            onAddTask={(pid) => handleOpenAddTaskModal(pid)}
             onUpdateProgress={(task) => { setSelectedTask(task); setShowProgressModal(true); }}
             onEditTask={(task) => { setSelectedTask(task); setShowEditModal(true); }}
             hasPermission={hasPermission}
@@ -128,39 +169,47 @@ export default function ProjectDetailPage() {
       />
 
       {showProgressModal && selectedTask && (
-        <ProgressUpdateModal 
-          task={selectedTask} 
-          onClose={() => { setShowProgressModal(false); setSelectedTask(null); }} 
-          onRefresh={fetchProjectDetail} 
-        />
+        <ModalErrorBoundary onClose={() => { setShowProgressModal(false); setSelectedTask(null); }}>
+          <ProgressUpdateModal 
+            task={selectedTask} 
+            onClose={() => { setShowProgressModal(false); setSelectedTask(null); }} 
+            onRefresh={fetchProjectDetail} 
+          />
+        </ModalErrorBoundary>
       )}
 
       {showEditModal && selectedTask && (
-        <EditTaskModal 
-          task={selectedTask}
-          isBuilder={isBuilder}
-          onClose={() => { setShowEditModal(false); setSelectedTask(null); }} 
-          onRefresh={fetchProjectDetail} 
-        />
+        <ModalErrorBoundary onClose={() => { setShowEditModal(false); setSelectedTask(null); }}>
+          <EditTaskModal 
+            task={selectedTask}
+            isBuilder={isBuilder}
+            onClose={() => { setShowEditModal(false); setSelectedTask(null); }} 
+            onRefresh={fetchProjectDetail} 
+          />
+        </ModalErrorBoundary>
       )}
 
       {showTaskModal && (
-        <TaskModal 
-          projectId={id} 
-          isBuilder={isBuilder} 
-          parentId={selectedParentId} 
-          allTasks={tasks}
-          onClose={() => { setShowTaskModal(false); setSelectedParentId(null); }} 
-          onRefresh={fetchProjectDetail} 
-        />
+        <ModalErrorBoundary onClose={() => { setShowTaskModal(false); setSelectedParentId(null); }}>
+          <TaskModal 
+            projectId={id} 
+            isBuilder={isBuilder} 
+            parentId={selectedParentId} 
+            allTasks={tasks}
+            onClose={() => { setShowTaskModal(false); setSelectedParentId(null); }} 
+            onRefresh={fetchProjectDetail} 
+          />
+        </ModalErrorBoundary>
       )}
 
       {showMemberModal && (
-        <MemberModal 
-          projectId={id} 
-          onClose={() => setShowMemberModal(false)} 
-          onRefresh={fetchProjectDetail} 
-        />
+        <ModalErrorBoundary onClose={() => setShowMemberModal(false)}>
+          <MemberModal 
+            projectId={id} 
+            onClose={() => setShowMemberModal(false)} 
+            onRefresh={fetchProjectDetail} 
+          />
+        </ModalErrorBoundary>
       )}
     </PageWrapper>
   );
@@ -298,14 +347,14 @@ function ProjectInfo({ project, onRefresh }) {
                 <span className="text-muted text-sm">Project Status</span>
                 <span className="badge" style={{
                   textTransform: 'capitalize',
-                  background: project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? 'rgba(59, 130, 246, 0.1)' : project.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(156, 163, 175, 0.1)',
-                  color: project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? '#3b82f6' : project.status === 'COMPLETED' ? '#10b981' : '#9ca3af',
-                  border: `1px solid ${project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? 'rgba(59, 130, 246, 0.2)' : project.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(156, 163, 175, 0.2)'}`,
+                  background: project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? 'rgba(59, 130, 246, 0.1)' : project.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.1)' : project.status === 'ON_HOLD' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(156, 163, 175, 0.1)',
+                  color: project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? '#3b82f6' : project.status === 'COMPLETED' ? '#10b981' : project.status === 'ON_HOLD' ? '#f59e0b' : '#9ca3af',
+                  border: `1px solid ${project.status === 'ACTIVE' || project.status === 'IN_PROGRESS' ? 'rgba(59, 130, 246, 0.2)' : project.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.2)' : project.status === 'ON_HOLD' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(156, 163, 175, 0.2)'}`,
                   padding: '3px 8px',
                   borderRadius: '4px',
                   fontSize: '11px',
                   fontWeight: 600
-                }}>{project.status.toLowerCase()}</span>
+                }}>{(project.status || '').toLowerCase().replace('_', ' ')}</span>
               </div>
               <div className="flex justify-between border-b border-secondary pb-sm" style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid var(--border-secondary)', marginTop: '8px', alignItems: 'center' }}>
                 <span className="text-muted text-sm">Project Priority</span>
@@ -444,9 +493,9 @@ function ProjectInfo({ project, onRefresh }) {
                       <label className="form-label" style={{ fontSize: '12px' }}>Project Status</label>
                       <select className="form-input" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
                         <option value="PLANNED">Planned</option>
-                        <option value="ACTIVE">Active</option>
+                        <option value="IN_PROGRESS">In Progress</option>
                         <option value="COMPLETED">Completed</option>
-                        <option value="SUSPENDED">Suspended</option>
+                        <option value="ON_HOLD">On Hold</option>
                       </select>
                     </div>
                     <div className="form-group">
@@ -662,6 +711,9 @@ function ProjectOverview({ project, tasks }) {
 
 /* ─── WBS Tab ────────────────────────────────────────────────────────────── */
 function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, onUpdateProgress, onEditTask, hasPermission }) {
+  const canManage = typeof hasPermission === 'function' 
+    ? (hasPermission('tasks.manage') || hasPermission('projects.manage') || hasPermission('projects.update') || isBuilder) 
+    : true;
   const [expanded, setExpanded] = useState({});
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [viewProofTask, setViewProofTask] = useState(null);
@@ -770,14 +822,14 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
           <td className="wbs-cell" style={{ width: '80px' }}>{task.weightage}%</td>
           <td className="wbs-cell" style={{ width: '100px' }}>
             <div className="wbs-controls flex gap-xs" onClick={e => e.stopPropagation()}>
-              {!isSubTask && hasPermission('tasks.manage') && <button className="btn btn-icon btn-ghost btn-xs" title="Add Subtask" onClick={() => onAddTask(task.id)}><Plus size={12} /></button>}
-              {!hasChildren && hasPermission('tasks.manage') && (
-                <button className="btn btn-icon btn-ghost btn-xs" title="Update Progress" onClick={() => onUpdateProgress(task)}><Activity size={12} /></button>
+              {!isSubTask && canManage && <button className="btn btn-icon btn-ghost btn-xs" type="button" title="Add Subtask" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddTask(task.id); }}><Plus size={12} /></button>}
+              {!hasChildren && canManage && (
+                <button className="btn btn-icon btn-ghost btn-xs" type="button" title="Update Progress" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onUpdateProgress(task); }}><Activity size={12} /></button>
               )}
-              {hasPermission('tasks.manage') && (
+              {canManage && (
                 <>
-                  <button className="btn btn-icon btn-ghost btn-xs" title="Edit Task" onClick={() => onEditTask(task)}><Edit2 size={12} /></button>
-                  <button className="btn btn-icon btn-ghost btn-xs text-danger" title="Delete Task" onClick={() => handleDeleteTask(task)}><Trash2 size={12} /></button>
+                  <button className="btn btn-icon btn-ghost btn-xs" type="button" title="Edit Task" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEditTask(task); }}><Edit2 size={12} /></button>
+                  <button className="btn btn-icon btn-ghost btn-xs text-danger" type="button" title="Delete Task" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTask(task); }}><Trash2 size={12} /></button>
                 </>
               )}
             </div>
@@ -790,8 +842,11 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
 
   return (
     <div className="card-flat" style={{ padding: 0 }}>
-      <div className="chart-header p-md">
-        <h3>{t('wbs_title')}</h3>
+      <div className="chart-header p-md flex justify-between items-center" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
+        <h3 style={{ margin: 0 }}>{t('wbs_title')}</h3>
+        <button className="btn btn-primary btn-sm" type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddTask(null); }}>
+          <Plus size={14} /> {t('add_task')}
+        </button>
       </div>
       <div className="wbs-table-container">
         <table className="wbs-table">
@@ -809,7 +864,16 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
           <tbody>
             {initialTasks.map(task => renderTask(task))}
             {initialTasks.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-muted py-2xl">{t('no_tasks')}</td></tr>
+              <tr>
+                <td colSpan={7} className="text-center text-muted py-2xl" style={{ padding: '40px', textAlign: 'center' }}>
+                  <div className="flex flex-col items-center gap-sm" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>{t('no_tasks')}</p>
+                    <button className="btn btn-primary btn-sm" type="button" style={{ marginTop: '8px' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddTask(null); }}>
+                      <Plus size={14} /> Add First Task
+                    </button>
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -839,16 +903,35 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
 }
 
 function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefresh }) {
+  const findTaskById = (list, taskId) => {
+    if (!Array.isArray(list)) return null;
+    for (const item of list) {
+      if (!item) continue;
+      if (String(item.id) === String(taskId)) return item;
+      if (Array.isArray(item.subTasks) && item.subTasks.length > 0) {
+        const found = findTaskById(item.subTasks, taskId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   // Auto-increment logic
   const getNextWBSCode = () => {
-    if (parentId) {
-      const parent = allTasks.find(t => String(t.id) === String(parentId));
-      if (!parent) return '01-01';
-      const siblingCount = (parent.subTasks || []).length;
-      return `${parent.wbsCode}-${String(siblingCount + 1).padStart(2, '0')}`;
+    try {
+      const safeTasks = Array.isArray(allTasks) ? allTasks : [];
+      if (parentId) {
+        const parent = findTaskById(safeTasks, parentId);
+        if (!parent) return '01-01';
+        const siblingCount = Array.isArray(parent.subTasks) ? parent.subTasks.length : 0;
+        return `${parent.wbsCode || '01'}-${String(siblingCount + 1).padStart(2, '0')}`;
+      }
+      const rootCount = safeTasks.filter(t => t && !t.parentId).length;
+      return String(rootCount + 1).padStart(2, '0');
+    } catch (err) {
+      console.error('Error generating WBS code:', err);
+      return '01';
     }
-    const rootCount = allTasks.filter(t => !t.parentId).length;
-    return String(rootCount + 1).padStart(2, '0');
   };
 
   const [form, setForm] = useState({ 
@@ -859,6 +942,10 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
     startDate: '', endDate: '', imageUrl: '',
     assignedTo: ''
   });
+
+  useEffect(() => {
+    setForm(f => ({ ...f, wbsCode: getNextWBSCode() }));
+  }, [parentId, allTasks]);
   const [subTasks, setSubTasks] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -871,9 +958,12 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
   useEffect(() => {
     const loadPeople = async () => {
       try {
-        const { data } = await userService.getAll().catch(() => ({ data: { data: [] } }));
-        setTeamMembers(data.data || []);
-      } catch { setTeamMembers([]); }
+        const res = await userService.getAll();
+        const raw = res?.data?.data || res?.data || [];
+        setTeamMembers(Array.isArray(raw) ? raw : []);
+      } catch { 
+        setTeamMembers([]); 
+      }
     };
     loadPeople();
   }, [projectId]);
@@ -920,39 +1010,50 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name) return toast.warning('Name is required');
+    if (!form.name || !form.name.trim()) return toast.warning('Task name is required');
     try {
       setSubmitting(true);
       
       const payload = {
-        ...form,
-        assignedUserId: form.assignedTo.startsWith('user-') ? form.assignedTo.substring(5) : null,
-        assignedWorkerId: form.assignedTo.startsWith('worker-') ? form.assignedTo.substring(7) : null,
+        name: form.name.trim(),
+        description: form.description || undefined,
+        wbsCode: form.wbsCode,
+        weightage: Number(form.weightage) || 0,
+        isMilestone: Boolean(form.isMilestone),
+        milestoneTriggerValue: Number(form.milestoneTriggerValue) || 100,
+        startDate: form.startDate || undefined,
+        endDate: form.endDate || undefined,
+        imageUrl: form.imageUrl || undefined,
+        parentId: parentId || undefined,
+        assignedUserId: form.assignedTo && form.assignedTo.startsWith('user-') ? form.assignedTo.substring(5) : undefined,
+        assignedWorkerId: form.assignedTo && form.assignedTo.startsWith('worker-') ? form.assignedTo.substring(7) : undefined,
       };
-      delete payload.assignedTo;
 
       // Create main task
       const mainRes = await (isBuilder 
-        ? projectService.builderCreateTask(projectId, { ...payload, parentId }) 
-        : projectService.createTask(projectId, { ...payload, parentId }));
+        ? projectService.builderCreateTask(projectId, payload) 
+        : projectService.createTask(projectId, payload));
       
       const newMainId = mainRes.data?.data?.id || mainRes.data?.id;
 
       // Create subtasks if any
       if (subTasks.length > 0 && newMainId) {
         for (const sub of subTasks) {
-          if (sub.name) {
+          if (sub.name && sub.name.trim()) {
             await (isBuilder 
-              ? projectService.builderCreateTask(projectId, { ...sub, parentId: newMainId })
-              : projectService.createTask(projectId, { ...sub, parentId: newMainId }));
+              ? projectService.builderCreateTask(projectId, { name: sub.name.trim(), wbsCode: sub.wbsCode, parentId: newMainId })
+              : projectService.createTask(projectId, { name: sub.name.trim(), wbsCode: sub.wbsCode, parentId: newMainId }));
           }
         }
       }
 
-      toast.success('Tasks added');
+      toast.success('Task created successfully');
       onRefresh();
       onClose();
-    } catch { toast.error('Failed to add tasks'); }
+    } catch (err) {
+      console.error('Task creation error:', err);
+      toast.error(err.response?.data?.message || err.message || 'Failed to add task');
+    }
     finally { setSubmitting(false); }
   };
 
@@ -1009,17 +1110,17 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
               </label>
               <select className="form-input" value={form.assignedTo} onChange={e => setForm({...form, assignedTo: e.target.value})}>
                 <option value="">— Not Assigned —</option>
-                {teamMembers.length > 0 && (
+                {Array.isArray(teamMembers) && teamMembers.length > 0 && (
                   <optgroup label="💼 Management Team">
                     {teamMembers.map(u => (
-                      <option key={`user-${u.id}`} value={`user-${u.id}`}>
-                        {u.firstName} {u.lastName} ({u.role || 'Manager'})
+                      <option key={`user-${u.id || Math.random()}`} value={`user-${u.id}`}>
+                        {u.firstName || ''} {u.lastName || ''} ({typeof u.role === 'object' ? (u.role?.name || 'Manager') : (u.role || 'Manager')})
                       </option>
                     ))}
                   </optgroup>
                 )}
               </select>
-              {teamMembers.length === 0 && (
+              {(!Array.isArray(teamMembers) || teamMembers.length === 0) && (
                 <span style={{ fontSize: 10, color: '#f59e0b', marginTop: 4, display: 'block' }}>No team members found. Invite members first.</span>
               )}
             </div>
@@ -1074,7 +1175,9 @@ function TaskModal({ projectId, isBuilder, parentId, allTasks, onClose, onRefres
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>{t('cancel')}</button>
-            <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? t('inviting') : t('add_task')}</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting ? 'Saving Task...' : (parentId ? 'Add Sub-task' : 'Create Task')}
+            </button>
           </div>
         </form>
       </div>
@@ -1106,7 +1209,7 @@ function ProjectTeam({ project, onInvite, onRemoveMember }) {
                       <span className="font-semibold">{m.user?.firstName} {m.user?.lastName}</span>
                     </div>
                   </td>
-                  <td><span className="badge badge-purple">{m.role}</span></td>
+                  <td><span className="badge badge-purple">{typeof m.role === 'object' ? (m.role?.name || 'Member') : (m.role || 'Member')}</span></td>
                   <td><span className="badge badge-green">Active</span></td>
                   <td>
                     <button className="btn btn-icon btn-ghost text-danger" onClick={() => onRemoveMember(m)} title="Remove Member"><Trash2 size={14}/></button>
@@ -1140,7 +1243,7 @@ function ProjectTeam({ project, onInvite, onRemoveMember }) {
                       <span className="font-semibold">{w.firstName} {w.lastName}</span>
                     </div>
                   </td>
-                  <td>{w.role}</td>
+                  <td>{typeof w.role === 'object' ? (w.role?.name || 'Worker') : (w.role || 'Worker')}</td>
                   <td>₹{w.dailyWage}/day</td>
                   <td><span className={`badge ${w.status === 'ACTIVE' ? 'badge-green' : 'badge-red'}`}>{w.status}</span></td>
                 </tr>
@@ -1200,10 +1303,12 @@ function MemberModal({ projectId, onClose, onRefresh }) {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const { data } = await userService.getAll();
-        setUsers(data.data || []);
+        const res = await userService.getAll();
+        const raw = res?.data?.data || res?.data || [];
+        setUsers(Array.isArray(raw) ? raw : []);
       } catch (err) { 
-        toast.error(err.response?.data?.message || 'Failed to load users'); 
+        toast.error(err.response?.data?.message || 'Failed to load users');
+        setUsers([]);
       }
       finally { setLoading(false); }
     };
@@ -1452,8 +1557,9 @@ function EditTaskModal({ task, isBuilder, onClose, onRefresh }) {
   useEffect(() => {
     const loadPeople = async () => {
       try {
-        const { data } = await userService.getAll().catch(() => ({ data: { data: [] } }));
-        setTeamMembers(data.data || []);
+        const res = await userService.getAll();
+        const raw = res?.data?.data || res?.data || [];
+        setTeamMembers(Array.isArray(raw) ? raw : []);
       } catch { setTeamMembers([]); }
     };
     loadPeople();
@@ -1508,11 +1614,11 @@ function EditTaskModal({ task, isBuilder, onClose, onRefresh }) {
               </label>
               <select className="form-input" value={form.assignedTo} onChange={e => setForm({...form, assignedTo: e.target.value})}>
                 <option value="">— Not Assigned —</option>
-                {teamMembers.length > 0 && (
+                {Array.isArray(teamMembers) && teamMembers.length > 0 && (
                   <optgroup label="💼 Management Team">
                     {teamMembers.map(u => (
-                      <option key={`user-${u.id}`} value={`user-${u.id}`}>
-                        {u.firstName} {u.lastName} ({u.role || 'Manager'})
+                      <option key={`user-${u.id || Math.random()}`} value={`user-${u.id}`}>
+                        {u.firstName || ''} {u.lastName || ''} ({typeof u.role === 'object' ? (u.role?.name || 'Manager') : (u.role || 'Manager')})
                       </option>
                     ))}
                   </optgroup>

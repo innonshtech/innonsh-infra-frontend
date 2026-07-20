@@ -67,15 +67,16 @@ export default function MyTasksPage() {
       await projectService.updateTask(taskPendingProof.id, {
         progress: 100,
         status: 'COMPLETED',
-        completionNotes: proofData.completionNotes,
-        completionImageUrl: proofData.completionImageUrl
+        completionNotes: proofData.completionNotes || undefined,
+        completionImageUrl: proofData.completionImageUrl || undefined
       });
       toast.success('Task marked as completed with proof');
       setTaskPendingProof(null);
       setEditingTaskId(null);
       fetchTasks();
     } catch (err) {
-      toast.error('Failed to save completion proof');
+      console.error('Completion error:', err);
+      toast.error(err.response?.data?.message || err.message || 'Failed to save completion proof');
     }
   };
 
