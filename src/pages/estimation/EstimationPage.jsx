@@ -362,6 +362,7 @@ function RequestApprovalModal({ isOpen, onClose, onSubmit, totalAmount }) {
 
 /* ─── BOQ Editor (TreeGrid-style) ────────────────────────────────────────── */
 function BOQEditor({ estimation, onBack }) {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [versions, setVersions] = useState([]);
   const [activeVersion, setActiveVersion] = useState(null);
@@ -409,24 +410,7 @@ function BOQEditor({ estimation, onBack }) {
       const data = res.data?.data || res.data || [];
       setCatalogItems(Array.isArray(data) ? data : []);
     } catch { /* silent */ }
-
-    try {
-      const stored = localStorage.getItem('erp_predefined_materials');
-      const predefined = stored ? JSON.parse(stored) : [
-        { id: '1', name: 'Portland Pozzolana Cement (PPC)', category: 'Cement', unit: 'BAG' },
-        { id: '2', name: 'OPC 53 Grade Cement', category: 'Cement', unit: 'BAG' },
-        { id: '3', name: 'TMT Steel Rebars (12mm)', category: 'Steel', unit: 'MT' },
-        { id: '4', name: 'TMT Steel Rebars (10mm)', category: 'Steel', unit: 'MT' },
-        { id: '5', name: 'Binding Wire', category: 'Steel', unit: 'KG' },
-        { id: '6', name: 'Manufactured Sand (M-Sand)', category: 'Aggregate', unit: 'CUM' },
-        { id: '7', name: 'Crushed Stone Aggregate (20mm)', category: 'Aggregate', unit: 'CUM' },
-        { id: '8', name: 'AAC Blocks (600x200x200mm)', category: 'Masonry', unit: 'NOS' },
-        { id: '9', name: 'Red Clay Bricks', category: 'Masonry', unit: 'NOS' },
-        { id: '10', name: 'PVC Plumbing Pipe (1 inch)', category: 'Plumbing', unit: 'RMT' },
-        { id: '11', name: 'FR Copper Wire (2.5 sq mm)', category: 'Electrical', unit: 'NOS' }
-      ];
-      setPredefinedItems(predefined);
-    } catch { /* silent */ }
+    setPredefinedItems([]);
   };
 
   const selectCatalogItem = (catItem) => {
@@ -625,6 +609,7 @@ function BOQEditor({ estimation, onBack }) {
   };
 
   const totalAmount = items.reduce((sum, i) => sum + (i.amount || 0), 0);
+  const hasBeenPushed = activeVersion?.procurementRequests && activeVersion.procurementRequests.length > 0;
 
   return (
     <>
@@ -639,15 +624,27 @@ function BOQEditor({ estimation, onBack }) {
             </button>
           )}
           {activeVersion?.status === 'PENDING_APPROVAL' && (
-            <button className="btn btn-primary" onClick={() => setShowApproveConfirm(true)} disabled={approving}>
-              {approving ? 'Approving...' : 'Approve Version'}
-            </button>
+            (user?.id === activeVersion?.designatedApproverId || user?.role?.toUpperCase() === 'OWNER' || user?.role === 'SUPER_ADMIN') ? (
+              <button className="btn btn-primary" onClick={() => setShowApproveConfirm(true)} disabled={approving}>
+                {approving ? 'Approving...' : 'Approve Version'}
+              </button>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-muted)', background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
+                <Clock size={14} style={{ color: 'var(--accent-warning)' }} /> Awaiting approval from designated approver
+              </div>
+            )
           )}
           {activeVersion?.status === 'APPROVED' && (
             <>
-              <button className="btn btn-success" onClick={handleSendToProcurementClick} disabled={checkingInventory} style={{ background: 'var(--accent-success)', color: 'white' }}>
-                {checkingInventory ? 'Checking...' : 'Send to Procurement'}
-              </button>
+              {hasBeenPushed ? (
+                <button className="btn btn-secondary" disabled style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: '1px solid var(--border-primary)', cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  ✓ Sent to Procurement
+                </button>
+              ) : (
+                <button className="btn btn-success" onClick={handleSendToProcurementClick} disabled={checkingInventory} style={{ background: 'var(--accent-success)', color: 'white' }}>
+                  {checkingInventory ? 'Checking...' : 'Send to Procurement'}
+                </button>
+              )}
               <button className="btn btn-primary" onClick={createNewVersion} disabled={creatingVersion}>
                 {creatingVersion ? 'Creating...' : 'Create New Version'}
               </button>

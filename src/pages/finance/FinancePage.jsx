@@ -36,6 +36,10 @@ export default function FinancePage() {
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [deleteConfig, setDeleteConfig] = useState({ show: false, invoiceId: null });
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [paymentMode, setPaymentMode] = useState('BANK_TRANSFER');
+  const [payingBill, setPayingBill] = useState(false);
   const toast = useToast();
 
   useEffect(() => { loadData(); }, [tab]);
@@ -46,7 +50,7 @@ export default function FinancePage() {
       if (tab === 'invoices') {
         const res = await financeService.getInvoices();
         setInvoices(res.data?.data || res.data || []);
-      } else if (tab === 'transactions') {
+      } else if (tab === 'transactions' || tab === 'expenses') {
         const res = await financeService.getTransactions();
         setTransactions(res.data?.data || res.data || []);
       } else if (tab === 'labour') {
@@ -59,9 +63,10 @@ export default function FinancePage() {
         const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
         const endStr = now.toISOString().split('T')[0];
 
-        const [weekRes, monthRes] = await Promise.all([
+        const [weekRes, monthRes, txRes] = await Promise.all([
           labourService.getPayroll({ startDate: startOfWeekStr, endDate: endStr }),
-          labourService.getPayroll({ startDate: startOfMonth, endDate: endStr })
+          labourService.getPayroll({ startDate: startOfMonth, endDate: endStr }),
+          financeService.getTransactions()
         ]);
 
         const weeklyTotal = weekRes.data?.data?.totalPayroll || 0;
@@ -79,12 +84,29 @@ export default function FinancePage() {
           monthly: monthlyTotal,
           projects: Object.entries(projectMap).map(([name, total]) => ({ name, total }))
         });
+        setTransactions(txRes.data?.data || txRes.data || []);
       } else {
         const res = await financeService.getPayments();
         setPayments(res.data?.data || res.data || []);
       }
     } catch { toast.error('Failed to load finance data'); }
     finally { setLoading(false); }
+  };
+
+  const handlePayBill = async () => {
+    if (!selectedBill) return;
+    try {
+      setPayingBill(true);
+      await financeService.approveTransaction(selectedBill.id, { paymentMode });
+      toast.success('Bill paid successfully and transaction recorded!');
+      setShowPayModal(false);
+      setSelectedBill(null);
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to pay bill');
+    } finally {
+      setPayingBill(false);
+    }
   };
 
   const handleDeleteInvoice = async (id) => {
@@ -99,6 +121,26 @@ export default function FinancePage() {
       loadData(); 
     }
     catch { toast.error('Failed to delete'); }
+  };
+
+  const handleApproveTransaction = async (id) => {
+    try {
+      await financeService.approveTransaction(id, { paymentMode: 'BANK_TRANSFER' });
+      toast.success('Labour payroll approved & posted to General Ledger!');
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to approve transaction');
+    }
+  };
+
+  const handleRejectTransaction = async (id) => {
+    try {
+      await financeService.rejectTransaction(id);
+      toast.warning('Labour payroll batch rejected');
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reject transaction');
+    }
   };
 
   // Calculate summary stats
@@ -128,7 +170,7 @@ export default function FinancePage() {
       )}
 
       <div className="labour-tab-bar" style={{ background: 'transparent', padding: 0 }}>
-        {['invoices', 'payments', 'transactions', 'labour'].map(t => (
+        {['invoices', 'payments', 'expenses', 'transactions', 'labour'].map(t => (
           <button key={t} className={`labour-tab ${tab === t ? 'act' : ''}`} onClick={() => setTab(t)}>
             {t === 'labour' ? 'Labour Costs' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -174,6 +216,64 @@ export default function FinancePage() {
             </tbody>
           </table>
         </div>
+      ) : tab === 'expenses' ? (
+        <div className="erp-card">
+          <table className="erp-tbl">
+            <thead>
+              <tr>
+                <th>Bill Date</th>
+                <th>Description</th>
+                <th>Vendor</th>
+                <th>Project</th>
+                <th>Amount (₹)</th>
+                <th>Status</th>
+                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions
+                .filter(t => t.type === 'EXPENSE' && (t.category === 'VENDOR_BILL' || t.category === 'FUEL_BILL' || t.category === 'CONTRACT_BILL'))
+                .map(bill => {
+                  const vendorName = bill.metadata?.vendorName || '—';
+                  const projectName = bill.metadata?.projectName || '—';
+                  return (
+                    <tr key={bill.id}>
+                      <td className="text-sm">{new Date(bill.date).toLocaleDateString('en-IN')}</td>
+                      <td className="prim-cell">{bill.description}</td>
+                      <td>{vendorName}</td>
+                      <td>{projectName}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(bill.amount)}</td>
+                      <td>
+                        {bill.status === 'PENDING' ? (
+                          <span className="badge" style={{ background: '#fef3c7', color: '#d97706', padding: '4px 10px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>⏳ Pending Payment</span>
+                        ) : (
+                          <span className="badge" style={{ background: '#d1fae5', color: '#059669', padding: '4px 10px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>✅ Paid</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {bill.status === 'PENDING' && (
+                          <button 
+                            className="btn btn-sm btn-success"
+                            onClick={() => { setSelectedBill(bill); setShowPayModal(true); }}
+                            style={{ background: 'var(--accent-success)', color: 'white', border: 'none', padding: '6px 12px', fontSize: '11px', fontWeight: 600, borderRadius: '6px', cursor: 'pointer' }}
+                          >
+                            💳 Pay Vendor
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              {transactions.filter(t => t.type === 'EXPENSE' && (t.category === 'VENDOR_BILL' || t.category === 'FUEL_BILL' || t.category === 'CONTRACT_BILL')).length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
+                    No vendor bills or expenses recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       ) : tab === 'payments' ? (
         <div className="table-container">
           <table className="data-table">
@@ -198,16 +298,97 @@ export default function FinancePage() {
         </div>
       ) : tab === 'labour' ? (
         <div className="finance-labour-view animate-fade-up">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-            <div className="att-kpi" style={{ background: 'var(--accent-primary)', color: 'white', border: 'none' }}>
-              <div className="att-kpi-val" style={{ color: 'white', fontSize: 24 }}>{formatCurrency(labourCosts.weekly)}</div>
-              <div className="att-kpi-lbl" style={{ color: 'rgba(255,255,255,0.8)' }}>Aggregated Weekly Spend</div>
-            </div>
-            <div className="att-kpi" style={{ border: '1.5px solid var(--accent-primary)' }}>
-              <div className="att-kpi-val" style={{ color: 'var(--accent-primary)', fontSize: 24 }}>{formatCurrency(labourCosts.monthly)}</div>
-              <div className="att-kpi-lbl">Aggregated Monthly Spend</div>
-            </div>
-          </div>
+          {/* Section 1: Pending Payroll Approvals */}
+          {(() => {
+            const pendingLabourTx = transactions.filter(t => 
+              t.status === 'PENDING_APPROVAL' && 
+              (t.category === 'LABOUR_COST' || t.category === 'LABOUR_WAGES' || t.description?.toLowerCase().includes('labour'))
+            );
+            return (
+              <div className="erp-card" style={{ marginBottom: 20 }}>
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+                    ⏳ Pending Labour Payroll Approvals ({pendingLabourTx.length})
+                  </span>
+                </div>
+                
+                <table className="erp-tbl">
+                  <thead>
+                    <tr>
+                      <th>Submission Date</th>
+                      <th>Description / Period</th>
+                      <th>Workers</th>
+                      <th>Amount (₹)</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingLabourTx.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-muted)' }}>
+                          ✅ No pending labour payroll submissions. All payroll batches are approved & posted.
+                        </td>
+                      </tr>
+                    ) : (
+                      pendingLabourTx.map(t => (
+                        <tr key={t.id}>
+                          <td className="prim-cell">{new Date(t.date).toLocaleDateString('en-IN')}</td>
+                          <td>{t.description || 'Labour Payroll Batch'}</td>
+                          <td><span className="badge badge-purple">{t.metadata?.totalWorkers || '—'} workers</span></td>
+                          <td style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 13 }}>{formatCurrency(t.amount)}</td>
+                          <td>
+                            <span className="badge" style={{ background: '#fef3c7', color: '#d97706', padding: '4px 8px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>
+                              ⏳ Pending Approval
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="flex gap-xs" style={{ justifyContent: 'flex-end' }}>
+                              <button 
+                                className="btn btn-xs btn-primary" 
+                                style={{ background: '#059669', color: '#fff', border: 'none', padding: '6px 12px', fontSize: 11, fontWeight: 600, borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                                onClick={() => handleApproveTransaction(t.id)}
+                                title="Approve & Disburse Ledger"
+                              >
+                                ✅ Approve & Disburse
+                              </button>
+                              <button 
+                                className="btn btn-xs btn-ghost text-danger" 
+                                style={{ padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
+                                onClick={() => handleRejectTransaction(t.id)}
+                                title="Reject Payroll Batch"
+                              >
+                                ❌ Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+
+          {(() => {
+            const pendingLabourTx = transactions.filter(t => 
+              t.status === 'PENDING_APPROVAL' && 
+              (t.category === 'LABOUR_COST' || t.category === 'LABOUR_WAGES' || t.description?.toLowerCase().includes('labour'))
+            );
+            const pendingTotal = pendingLabourTx.reduce((sum, t) => sum + t.amount, 0);
+
+            return (
+              <div className="att-summary-row" style={{ marginBottom: 20 }}>
+                <div className="att-kpi" style={{ border: '1.5px solid var(--accent-primary)', width: '100%', maxWidth: '350px' }}>
+                  <div className="att-kpi-val" style={{ color: 'var(--accent-primary)', fontSize: 24 }}>
+                    {formatCurrency(pendingTotal)}
+                  </div>
+                  <div className="att-kpi-lbl">Total Pending Payroll to Disburse</div>
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="erp-card">
             <div className="card-header">
@@ -242,9 +423,9 @@ export default function FinancePage() {
       ) : (
         <div className="erp-card">
           <table className="erp-tbl">
-            <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>Description</th></tr></thead>
+            <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>Description</th><th>Status</th></tr></thead>
             <tbody>
-              {transactions.map(t => (
+              {transactions.filter(t => t.status !== 'PENDING_APPROVAL' && t.status !== 'PENDING').map(t => (
                 <tr key={t.id}>
                   <td>{new Date(t.date).toLocaleDateString('en-IN')}</td>
                   <td>
@@ -254,11 +435,20 @@ export default function FinancePage() {
                     }
                   </td>
                   <td>{t.category || '—'}</td>
-                  <td style={{ fontWeight: 500 }}>{formatCurrency(t.amount)}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatCurrency(t.amount)}</td>
                   <td>{t.description || '—'}</td>
+                  <td>
+                    {t.status === 'REJECTED' ? (
+                      <span className="badge" style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 8px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>❌ Rejected</span>
+                    ) : (
+                      <span className="badge" style={{ background: '#d1fae5', color: '#059669', padding: '4px 8px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>✅ Approved & Paid</span>
+                    )}
+                  </td>
                 </tr>
               ))}
-              {transactions.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32 }}>No transactions recorded</td></tr>}
+              {transactions.filter(t => t.status !== 'PENDING_APPROVAL' && t.status !== 'PENDING').length === 0 && (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32 }}>No finalized transactions recorded</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -272,6 +462,59 @@ export default function FinancePage() {
           onClose={() => { setShowRecordPayment(false); setSelectedInvoice(null); }} 
           onDone={loadData} 
         />
+      )}
+
+      {showPayModal && selectedBill && (
+        <div className="modal-overlay" onClick={() => { setShowPayModal(false); setSelectedBill(null); }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>Pay Vendor Bill</h3>
+              <button className="btn btn-icon btn-ghost" onClick={() => { setShowPayModal(false); setSelectedBill(null); }}>✕</button>
+            </div>
+            <div className="modal-body" style={{ padding: 'var(--space-lg)' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', marginBottom: 'var(--space-md)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Vendor:</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedBill.metadata?.vendorName || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Description:</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedBill.description}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Project:</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedBill.metadata?.projectName || '—'}</span>
+                </div>
+                <div style={{ borderTop: '1px solid var(--border-primary)', margin: '8px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Amount Due:</span>
+                  <span style={{ fontWeight: 700, color: 'var(--accent-secondary)', fontSize: '18px' }}>{formatCurrency(selectedBill.amount)}</span>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>Select Payment Method</label>
+                <select 
+                  className="form-input" 
+                  value={paymentMode} 
+                  onChange={e => setPaymentMode(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-primary)' }}
+                >
+                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
+                  <option value="UPI">UPI (GPay / PhonePe)</option>
+                  <option value="CASH">Cash</option>
+                  <option value="CREDIT_CARD">Credit Card</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-sm)', borderTop: '1px solid var(--border-primary)', padding: 'var(--space-md)' }}>
+              <button className="btn btn-secondary" onClick={() => { setShowPayModal(false); setSelectedBill(null); }} disabled={payingBill}>Cancel</button>
+              <button className="btn btn-primary" onClick={handlePayBill} disabled={payingBill} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                {payingBill ? 'Processing...' : 'Confirm Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <ConfirmModal

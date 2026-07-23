@@ -30,6 +30,7 @@ import EquipmentPage from './pages/equipment/EquipmentPage';
 import ReportsHub from './pages/reports/ReportsHub';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import ContractsPage from './pages/contracts/ContractsPage';
+import AiBoardPage from './pages/ai/AiBoardPage';
 
 // Basic wrapper for protected routes
 const ProtectedRoute = () => {
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route element={<SubscriptionGuard />}>
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/ai-board" element={<AiBoardPage />} />
             <Route path="/projects" element={<ProjectListPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
             <Route path="/my-tasks" element={<MyTasksPage />} />

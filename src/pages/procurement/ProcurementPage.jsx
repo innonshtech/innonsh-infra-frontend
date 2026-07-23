@@ -109,12 +109,45 @@ export default function ProcurementPage() {
       subtitle="Manage purchase requests, vendors & purchase orders"
       actions={
         <div className="flex gap-md">
-          {tab === 'requests' && <button className="btn btn-primary" onClick={() => setShowCreate(true)}><Plus size={16} /> New Request</button>}
-          {tab === 'vendors' && <button className="btn btn-primary" onClick={() => setShowVendorCreate(true)}><Plus size={16} /> Add Vendor</button>}
+          {tab === 'requests' && <button className="btn btn-primary" onClick={() => setShowCreate(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={16} /> New Request</button>}
+          {tab === 'vendors' && <button className="btn btn-primary" onClick={() => setShowVendorCreate(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={16} /> Add Vendor</button>}
         </div>
       }
     >
-      <div className="projects-filters" style={{ marginBottom: 'var(--space-lg)' }}>
+      {/* ─── Premium Metrics Cards ─── */}
+      <div className="procurement-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+        <div className="summary-card" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 'var(--space-md)', boxShadow: 'var(--shadow-sm)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+          <div className="summary-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--accent-warning)', padding: '12px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Clock size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pending Requests</div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{requests.filter(r => r.status === 'PENDING').length}</div>
+          </div>
+        </div>
+        
+        <div className="summary-card" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 'var(--space-md)', boxShadow: 'var(--shadow-sm)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+          <div className="summary-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', padding: '12px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total POs</div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{pos.length}</div>
+          </div>
+        </div>
+
+        <div className="summary-card" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)', display: 'flex', alignItems: 'center', gap: 'var(--space-md)', boxShadow: 'var(--shadow-sm)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+          <div className="summary-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', padding: '12px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Users size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Vendors</div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{vendors.length}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="projects-filters" style={{ marginBottom: 'var(--space-lg)', borderBottom: '1px solid var(--border-primary)', paddingBottom: '2px' }}>
         {['requests', 'purchase-orders', 'vendors'].map(t => (
           <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
             {t === 'requests' ? `Requests (${requests.length})` : t === 'vendors' ? `Vendors (${vendors.length})` : `POs (${pos.length})`}
@@ -125,7 +158,7 @@ export default function ProcurementPage() {
       {loading ? (
         <div className="page-loader"><div className="spinner spinner-lg"></div></div>
       ) : tab === 'requests' ? (
-        <div className="table-container">
+        <div className="table-container" style={{ border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
           <table className="data-table">
             <thead><tr><th>Title</th><th>Project</th><th>Status</th><th>Items</th><th>Requested By</th><th>Actions</th></tr></thead>
             <tbody>
@@ -135,19 +168,39 @@ export default function ProcurementPage() {
                   <tr key={r.id}>
                     <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{r.title}</td>
                     <td>{r.project?.name || '—'}</td>
-                    <td><span className={`badge ${s.cls}`}><s.icon size={10} /> {s.label}</span></td>
-                    <td>{r.items?.length || 0} items</td>
-                    <td>{r.requestedBy?.firstName} {r.requestedBy?.lastName}</td>
+                    <td><span className={`badge ${s.cls}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}><s.icon size={11} /> {s.label}</span></td>
+                    <td><span style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 500 }}>{r.items?.length || 0} items</span></td>
+                    <td style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{r.requestedBy?.firstName} {r.requestedBy?.lastName}</td>
                     <td>
-                      <div className="flex gap-xs">
+                      <div className="flex gap-xs" style={{ whiteSpace: 'nowrap' }}>
                         {r.status === 'PENDING' && (
                           <>
-                            <button className="btn btn-sm btn-ghost text-success" onClick={() => handleApprove(r.id)} disabled={processing}>Approve</button>
-                            <button className="btn btn-sm btn-ghost text-danger" onClick={() => handleReject(r.id)} disabled={processing}>Reject</button>
+                            <button 
+                              className="btn btn-sm" 
+                              onClick={() => handleApprove(r.id)} 
+                              disabled={processing}
+                              style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.15)', borderRadius: '6px', padding: '4px 10px', fontWeight: 600, fontSize: '12px', transition: 'all 0.2s' }}
+                            >
+                              Approve
+                            </button>
+                            <button 
+                              className="btn btn-sm" 
+                              onClick={() => handleReject(r.id)} 
+                              disabled={processing}
+                              style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '6px', padding: '4px 10px', fontWeight: 600, fontSize: '12px', transition: 'all 0.2s' }}
+                            >
+                              Reject
+                            </button>
                           </>
                         )}
                         {r.status === 'APPROVED' && (!r._count || r._count.purchaseOrders === 0) && (
-                          <button className="btn btn-sm btn-ghost text-primary" onClick={() => setShowPOModal(r)}>Create PO</button>
+                          <button 
+                            className="btn btn-sm" 
+                            onClick={() => setShowPOModal(r)}
+                            style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.15)', borderRadius: '6px', padding: '4px 10px', fontWeight: 600, fontSize: '12px', transition: 'all 0.2s' }}
+                          >
+                            Create PO
+                          </button>
                         )}
                       </div>
                     </td>
@@ -159,43 +212,45 @@ export default function ProcurementPage() {
           </table>
         </div>
       ) : tab === 'vendors' ? (
-        <div className="table-container">
+        <div className="table-container" style={{ border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
           <table className="data-table">
             <thead><tr><th>Name</th><th>Service Type</th><th>Email</th><th>Phone</th><th>Address</th><th>Actions</th></tr></thead>
             <tbody>
               {vendors.map(v => (
                 <tr key={v.id}>
                   <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{v.name}</td>
-                  <td>{v.serviceType ? <span className="badge badge-blue">{v.serviceType}</span> : '—'}</td>
+                  <td>{v.serviceType ? <span className="badge badge-blue" style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px' }}>{v.serviceType}</span> : '—'}</td>
                   <td>{v.email || '—'}</td>
                   <td>{v.phone || '—'}</td>
                   <td className="text-sm">{v.address || '—'}</td>
                   <td>
                     <div className="flex gap-xs">
                       <button 
-                        className="btn btn-icon btn-ghost btn-sm text-accent" 
+                        className="btn btn-icon btn-ghost btn-sm" 
                         title="Edit Vendor"
                         onClick={() => { setEditVendor(v); setShowVendorEdit(true); }}
+                        style={{ color: 'var(--accent-primary)', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '6px', padding: '6px' }}
                       >
-                        <Edit2 size={14} style={{ pointerEvents: 'none' }} />
+                        <Edit2 size={13} style={{ pointerEvents: 'none' }} />
                       </button>
                       <button 
-                        className="btn btn-icon btn-ghost btn-sm text-danger" 
+                        className="btn btn-icon btn-ghost btn-sm" 
                         title="Delete Vendor"
                         onClick={() => handleDeleteVendor(v.id)}
+                        style={{ color: 'var(--accent-danger)', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '6px', padding: '6px' }}
                       >
-                        <Trash2 size={14} style={{ pointerEvents: 'none' }} />
+                        <Trash2 size={13} style={{ pointerEvents: 'none' }} />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {vendors.length === 0 && <tr><td colSpan={5} className="text-center text-muted" style={{ padding: 'var(--space-2xl)' }}>No vendors registered</td></tr>}
+              {vendors.length === 0 && <tr><td colSpan={6} className="text-center text-muted" style={{ padding: 'var(--space-2xl)' }}>No vendors registered</td></tr>}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="table-container">
+        <div className="table-container" style={{ border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
           <table className="data-table">
             <thead><tr><th>PO Number</th><th>Vendor</th><th>Total</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
             <tbody>
@@ -205,16 +260,22 @@ export default function ProcurementPage() {
                   <tr key={po.id}>
                     <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{po.poNumber}</td>
                     <td>{po.vendor?.name || '—'}</td>
-                    <td className="font-semibold">{formatCurrency(po.totalAmount)}</td>
-                    <td><span className={`badge ${s.cls}`}>{s.label}</span></td>
+                    <td className="font-semibold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(po.totalAmount)}</td>
+                    <td><span className={`badge ${s.cls}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}><s.icon size={11} /> {s.label}</span></td>
                     <td className="text-sm">{new Date(po.createdAt).toLocaleDateString('en-IN')}</td>
                     <td>
                       {po.status !== 'RECEIVED' ? (
-                        <button className="btn btn-sm btn-ghost btn-icon text-success" title="Receive Goods" onClick={() => setShowReceiveModal(po)}>
-                          <Package size={14} /> <span style={{ marginLeft: 4 }}>Receive</span>
+                        <button 
+                          className="btn btn-sm" 
+                          onClick={() => setShowReceiveModal(po)}
+                          style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.15)', borderRadius: '6px', padding: '4px 12px', fontWeight: 600, fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s' }}
+                        >
+                          <Package size={13} /> Receive
                         </button>
                       ) : (
-                        <span className="text-muted text-sm flex items-center gap-xs"><CheckCircle size={14} className="text-success" /> Received</span>
+                        <span className="text-muted text-sm flex items-center gap-xs" style={{ color: 'var(--accent-success)', background: 'rgba(16, 185, 129, 0.08)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, border: '1px solid rgba(16, 185, 129, 0.12)' }}>
+                          <CheckCircle size={13} /> Received
+                        </span>
                       )}
                     </td>
                   </tr>

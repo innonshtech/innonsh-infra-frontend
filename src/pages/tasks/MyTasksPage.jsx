@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import PageWrapper from '../../components/layout/PageWrapper';
 import { projectService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { ClipboardList, CheckCircle2, AlertCircle, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { ClipboardList, CheckCircle2, AlertCircle, Edit2, Check, X, RefreshCw, Camera, Eye } from 'lucide-react';
 import CompletionProofModal from '../../components/project/CompletionProofModal';
+import CompletionProofViewModal from '../../components/project/CompletionProofViewModal';
+import ModalErrorBoundary from '../../components/project/ModalErrorBoundary';
 
 export default function MyTasksPage() {
   const [tasks, setTasks] = useState([]);
@@ -11,6 +13,7 @@ export default function MyTasksPage() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editProgress, setEditProgress] = useState(0);
   const [taskPendingProof, setTaskPendingProof] = useState(null);
+  const [viewProofTask, setViewProofTask] = useState(null);
   const toast = useToast();
 
   const fetchTasks = async () => {
@@ -64,13 +67,16 @@ export default function MyTasksPage() {
   const handleConfirmCompletion = async (proofData) => {
     if (!taskPendingProof) return;
     try {
+      const targetProgress = proofData.progress !== undefined ? proofData.progress : 100;
       await projectService.updateTask(taskPendingProof.id, {
-        progress: 100,
-        status: 'COMPLETED',
+        progress: targetProgress,
+        status: proofData.status || (targetProgress === 100 ? 'COMPLETED' : targetProgress > 0 ? 'IN_PROGRESS' : 'PENDING'),
         completionNotes: proofData.completionNotes || undefined,
-        completionImageUrl: proofData.completionImageUrl || undefined
+        completionImageUrl: proofData.completionImageUrl || undefined,
+        imageUrl: proofData.completionImageUrl || undefined,
+        completionImages: proofData.completionImages || undefined
       });
-      toast.success('Task marked as completed with proof');
+      toast.success(`Task progress updated to ${targetProgress}% with site proof!`);
       setTaskPendingProof(null);
       setEditingTaskId(null);
       fetchTasks();
@@ -209,13 +215,31 @@ export default function MyTasksPage() {
                           </button>
                         </div>
                       ) : (
-                        <button 
-                          className="btn btn-icon btn-ghost btn-sm" 
-                          onClick={() => handleStartEdit(task)}
-                          title="Update Progress"
-                        >
-                          <Edit2 size={14} />
-                        </button>
+                        <div className="flex justify-center gap-xs">
+                          {(task.completionImageUrl || task.imageUrl || (task.proofHistory && task.proofHistory.length > 0)) && (
+                            <button 
+                              className="btn btn-icon btn-ghost btn-sm text-purple" 
+                              onClick={() => setViewProofTask(task)}
+                              title="View Uploaded Site Photo Proofs"
+                            >
+                              <Eye size={14} />
+                            </button>
+                          )}
+                          <button 
+                            className="btn btn-icon btn-ghost btn-sm text-accent" 
+                            onClick={() => setTaskPendingProof(task)}
+                            title="Update Progress & Upload Site Proof"
+                          >
+                            <Camera size={14} />
+                          </button>
+                          <button 
+                            className="btn btn-icon btn-ghost btn-sm" 
+                            onClick={() => handleStartEdit(task)}
+                            title="Quick Edit"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -229,9 +253,25 @@ export default function MyTasksPage() {
       {taskPendingProof && (
         <CompletionProofModal
           taskName={taskPendingProof.name}
+          initialProgress={taskPendingProof.progress || 100}
+          initialNotes={taskPendingProof.completionNotes || ''}
+          initialImageUrl={taskPendingProof.completionImageUrl || taskPendingProof.imageUrl || ''}
           onClose={() => setTaskPendingProof(null)}
           onSubmit={handleConfirmCompletion}
         />
+      )}
+
+      {viewProofTask && (
+        <ModalErrorBoundary onClose={() => setViewProofTask(null)}>
+          <CompletionProofViewModal
+            taskId={viewProofTask.id}
+            taskName={viewProofTask.name}
+            notes={viewProofTask.completionNotes || viewProofTask.description}
+            imageUrl={viewProofTask.completionImageUrl || viewProofTask.imageUrl}
+            onClose={() => setViewProofTask(null)}
+            onRefresh={fetchTasks}
+          />
+        </ModalErrorBoundary>
       )}
     </PageWrapper>
   );

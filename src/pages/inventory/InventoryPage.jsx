@@ -25,7 +25,10 @@ export default function InventoryPage() {
   const [deleteConfig, setDeleteConfig] = useState({ show: false, itemId: null });
   const toast = useToast();
 
-  useEffect(() => { loadData(); }, [tab]);
+  useEffect(() => { 
+    localStorage.removeItem('erp_predefined_materials');
+    loadData(); 
+  }, [tab]);
 
   const loadData = async () => {
     try {
@@ -76,14 +79,9 @@ export default function InventoryPage() {
       actions={
         <div className="flex gap-md">
           {tab === 'items' && (
-            <>
-              <button className="btn btn-secondary" onClick={() => setShowPredefined(true)}>
-                <Package size={16} style={{ marginRight: '6px' }} /> Material Templates
-              </button>
-              <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-                <Plus size={16} /> Add Item
-              </button>
-            </>
+            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+              <Plus size={16} /> Add Material
+            </button>
           )}
           {tab === 'warehouses' && <button className="btn btn-primary" onClick={() => setShowWarehouseCreate(true)}><Plus size={16} /> Add Warehouse</button>}
           {tab === 'stock' && <button className="btn btn-primary" onClick={() => setShowMovement(true)}><Plus size={16} /> Stock Movement</button>}
@@ -289,7 +287,7 @@ function EditItemModal({ item, onClose, onUpdated }) {
 function CreateItemModal({ onClose, onCreated }) {
   const [form, setForm] = useState({ name: '', sku: '', category: '', unit: 'NOS', minStock: 0 });
   const [submitting, setSubmitting] = useState(false);
-  const [isCustom, setIsCustom] = useState(false);
+  const [isCustom, setIsCustom] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const toast = useToast();
@@ -500,25 +498,12 @@ function StockMovementModal({ onClose, onDone }) {
 }
 
 // ─── Predefined Templates System ──────────────────────────────────────────
-const DEFAULT_PREDEFINED_MATERIALS = [
-  { id: '1', name: 'Portland Pozzolana Cement (PPC)', category: 'Cement', unit: 'BAG' },
-  { id: '2', name: 'OPC 53 Grade Cement', category: 'Cement', unit: 'BAG' },
-  { id: '3', name: 'TMT Steel Rebars (12mm)', category: 'Steel', unit: 'MT' },
-  { id: '4', name: 'TMT Steel Rebars (10mm)', category: 'Steel', unit: 'MT' },
-  { id: '5', name: 'Binding Wire', category: 'Steel', unit: 'KG' },
-  { id: '6', name: 'Manufactured Sand (M-Sand)', category: 'Aggregate', unit: 'CUM' },
-  { id: '7', name: 'Crushed Stone Aggregate (20mm)', category: 'Aggregate', unit: 'CUM' },
-  { id: '8', name: 'AAC Blocks (600x200x200mm)', category: 'Masonry', unit: 'NOS' },
-  { id: '9', name: 'Red Clay Bricks', category: 'Masonry', unit: 'NOS' },
-  { id: '10', name: 'PVC Plumbing Pipe (1 inch)', category: 'Plumbing', unit: 'RMT' },
-  { id: '11', name: 'FR Copper Wire (2.5 sq mm)', category: 'Electrical', unit: 'NOS' }
-];
+const DEFAULT_PREDEFINED_MATERIALS = [];
 
 export const getPredefinedMaterials = () => {
   const stored = localStorage.getItem('erp_predefined_materials');
   if (stored) return JSON.parse(stored);
-  localStorage.setItem('erp_predefined_materials', JSON.stringify(DEFAULT_PREDEFINED_MATERIALS));
-  return DEFAULT_PREDEFINED_MATERIALS;
+  return [];
 };
 
 function PredefinedListModal({ onClose }) {

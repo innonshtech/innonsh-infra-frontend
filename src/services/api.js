@@ -177,6 +177,8 @@ export const inventoryService = {
 export const financeService = {
   getTransactions: () => api.get('/contractor/finance/transactions'),
   createTransaction: (data) => api.post('/contractor/finance/transactions', data),
+  approveTransaction: (id, data) => api.patch(`/contractor/finance/transactions/${id}/approve`, data),
+  rejectTransaction: (id) => api.patch(`/contractor/finance/transactions/${id}/reject`),
   getInvoices: () => api.get('/contractor/finance/invoices'),
   createInvoice: (data) => api.post('/contractor/finance/invoices', data),
   updateInvoice: (id, data) => api.patch(`/contractor/finance/invoices/${id}`, data),
@@ -285,6 +287,7 @@ export const organizationService = {
   // Designations
   getDesignations: () => api.get('/organization/designations'),
   createDesignation: (data) => api.post('/organization/designations', data),
+  updateDesignation: (id, data) => api.put(`/organization/designations/${id}`, data),
   deleteDesignation: (id) => api.delete(`/organization/designations/${id}`),
   // Documents
   getDocuments: () => api.get('/organization/documents'),
@@ -316,6 +319,7 @@ export const labourService = {
   getUploadHistory: () => api.get('/contractor/labour/attendance/uploads'),
   // Payroll
   getPayroll: (params) => api.get('/contractor/labour/payroll', { params }),
+  runPayrollBatch: (data) => api.post('/contractor/labour/payroll/run', data),
   finalizePayroll: (data) => api.post('/contractor/labour/payroll/finalize', data),
 };
 
@@ -341,6 +345,9 @@ export const equipmentService = {
   deleteFuelLog: (logId) => api.delete(`/contractor/equipment/fuel/${logId}`),
   // Depreciation
   getDepreciation: () => api.get('/contractor/equipment/depreciation/report'),
+  // Fuel Container Purchases
+  getFuelPurchases: () => api.get('/contractor/equipment/fuel-purchases'),
+  purchaseFuel: (data) => api.post('/contractor/equipment/fuel-purchase', data),
 };
 
 // ─── Contract Service (Contractor) ────────────────────────────────────────
@@ -358,4 +365,12 @@ export const notificationService = {
   markRead: (id) => api.patch(`/contractor/notifications/${id}/read`),
   markAllRead: () => api.patch('/contractor/notifications/read-all'),
   generate: () => api.post('/contractor/notifications/generate'),
+};
+
+// ─── AI Board Service ──────────────────────────────────────────────────────
+export const aiService = {
+  getSessions: () => api.get('/ai/sessions'),
+  getSessionById: (id) => api.get(`/ai/sessions/${id}`),
+  chat: (data) => api.post('/ai/chat', data),
+  deleteSession: (id) => api.delete(`/ai/sessions/${id}`),
 };

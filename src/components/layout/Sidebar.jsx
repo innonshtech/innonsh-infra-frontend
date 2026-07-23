@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Calculator, ShoppingCart,
   Package, IndianRupee, Building2, Grid3X3, BookOpen,
   FileText, Users, Users2, Scale, ClipboardList, BarChart3,
-  Settings, ChevronLeft, ChevronRight, HardHat, LogOut, Wrench, Bell,
+  Settings, ChevronLeft, ChevronRight, HardHat, LogOut, Wrench, Bell, Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 import './Sidebar.css';
@@ -13,6 +13,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 
 const contractorMenu = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
   { label: 'Projects', icon: FolderKanban, path: '/projects' },
   { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
   { label: 'Estimation & BOQ', icon: Calculator, path: '/estimation' },
@@ -28,6 +29,7 @@ const contractorMenu = [
 
 const builderMenu = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
   { label: 'Projects', icon: FolderKanban, path: '/projects' },
   { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
   { label: 'Units', icon: Grid3X3, path: '/units' },
@@ -43,6 +45,88 @@ const builderMenu = [
   { label: 'Organization', icon: Building2, path: '/settings' },
 ];
 
+const permissionMapping = {
+  '/ai-board': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.includes('aiBoard.view');
+  },
+  '/dashboard': (user) => {
+    const role = user?.role?.toUpperCase();
+    return role === 'OWNER' || role === 'FINANCE' || user?.permissions?.includes('*') || user?.permissions?.includes('dashboard.view');
+  },
+  '/projects': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('projects.'));
+  },
+  '/my-tasks': () => true, // Accessible to all logged-in members
+  '/estimation': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('estimations.'));
+  },
+  '/procurement': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('procurement.'));
+  },
+  '/inventory': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('inventory.'));
+  },
+  '/labour': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('hr.') || p.startsWith('labour.'));
+  },
+  '/equipment': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('equipment.'));
+  },
+  '/finance': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.role?.toUpperCase() === 'FINANCE' ||
+           user?.permissions?.some(p => p.startsWith('finance.'));
+  },
+  '/contracts': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('contracts.'));
+  },
+  '/reports': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('reports.'));
+  },
+  '/settings': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.some(p => p.startsWith('settings.') || p.startsWith('organization.'));
+  },
+  '/units': (user) => {
+    return user?.permissions?.includes('*') || user?.role?.toUpperCase() === 'OWNER' || user?.permissions?.some(p => p.startsWith('units.'));
+  },
+  '/bookings': (user) => {
+    return user?.permissions?.includes('*') || user?.role?.toUpperCase() === 'OWNER' || user?.permissions?.some(p => p.startsWith('bookings.'));
+  },
+  '/billing': (user) => {
+    return user?.permissions?.includes('*') || user?.role?.toUpperCase() === 'OWNER' || user?.permissions?.some(p => p.startsWith('billing.'));
+  },
+  '/crm': (user) => {
+    return user?.permissions?.includes('*') || user?.role?.toUpperCase() === 'OWNER' || user?.permissions?.some(p => p.startsWith('crm.'));
+  },
+  '/lease': (user) => {
+    return user?.permissions?.includes('*') || user?.role?.toUpperCase() === 'OWNER' || user?.permissions?.some(p => p.startsWith('lease.'));
+  },
+  '/legal': (user) => {
+    return user?.permissions?.includes('*') || user?.role?.toUpperCase() === 'OWNER' || user?.permissions?.some(p => p.startsWith('legal.'));
+  }
+};
+
 export default function Sidebar() {
   const { erpType, user, company, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
@@ -57,6 +141,16 @@ export default function Sidebar() {
   };
 
   const menu = erpType === 'BUILDER' ? builderMenu : contractorMenu;
+  
+  // Filter sidebar tabs dynamically based on user role and permissions!
+  const filteredMenu = menu.filter(item => {
+    const checker = permissionMapping[item.path];
+    if (checker) {
+      return checker(user);
+    }
+    return true;
+  });
+
   const initials = user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}` : 'U';
   const logoUrl = company?.logo || user?.company?.logo;
 
@@ -90,7 +184,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar-nav">
-        {menu.map((item) => (
+        {filteredMenu.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -101,7 +195,7 @@ export default function Sidebar() {
           >
             <item.icon size={20} />
             {!collapsed && <span>{item.label}</span>}
-            {!collapsed && location.pathname === item.path && (
+            {location.pathname === item.path && (
               <div className="sidebar-active-indicator" />
             )}
           </NavLink>

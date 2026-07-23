@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, HasPermission } from '../../contexts/AuthContext';
 import PageWrapper from '../../components/layout/PageWrapper';
 import { useToast } from '../../contexts/ToastContext';
@@ -18,40 +18,9 @@ import {
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import './ProjectDetail.css';
 import CompletionProofViewModal from '../../components/project/CompletionProofViewModal';
+import ModalErrorBoundary from '../../components/project/ModalErrorBoundary';
 import ProjectPlanningTab from '../../components/project/ProjectPlanningTab';
 import { supabase, uploadFile } from '../../config/supabase';
-
-// ─── Error Boundary to Catch Modal Render Crashes ─────────────────────────
-class ModalErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error, errorInfo) {
-    console.error("Modal Render Crash:", error, errorInfo);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="modal-overlay" onClick={this.props.onClose}>
-          <div className="modal p-lg text-center" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', padding: '24px', background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-            <h3 style={{ color: '#ef4444', marginBottom: '12px', fontSize: '16px' }}>Form Render Error</h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              {this.state.error?.message || 'An unexpected error occurred while displaying this form.'}
-            </p>
-            <button className="btn btn-secondary" onClick={this.props.onClose}>
-              Close
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -60,7 +29,9 @@ export default function ProjectDetailPage() {
   
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [activeTab, setActiveTab] = useState('info');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'info');
   const [loading, setLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
@@ -83,7 +54,16 @@ export default function ProjectDetailPage() {
   };
 
   useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  useEffect(() => {
     fetchProjectDetail();
+    if (id) {
+      localStorage.setItem('lastProjectId', id);
+    }
   }, [id]);
 
   const fetchProjectDetail = async () => {
@@ -126,6 +106,7 @@ export default function ProjectDetailPage() {
         <button className={`labour-tab ${activeTab === 'team' ? 'act' : ''}`} onClick={() => setActiveTab('team')}>{t('team')}</button>
         <button className={`labour-tab ${activeTab === 'finance' ? 'act' : ''}`} onClick={() => setActiveTab('finance')}>{t('financials')}</button>
         <button className={`labour-tab ${activeTab === 'planning' ? 'act' : ''}`} onClick={() => setActiveTab('planning')}>Planning</button>
+        <button className={`labour-tab ${activeTab === 'files' ? 'act' : ''}`} onClick={() => setActiveTab('files')}>Uploaded Files</button>
       </div>
 
       <div className="hub-content">
@@ -146,6 +127,7 @@ export default function ProjectDetailPage() {
         {activeTab === 'team' && <ProjectTeam project={project} onInvite={() => setShowMemberModal(true)} onRemoveMember={setMemberToRemove} />}
         {activeTab === 'finance' && <ProjectFinance project={project} />}
         {activeTab === 'planning' && <ProjectPlanningTab projectId={id} />}
+        {activeTab === 'files' && <ProjectFilesTab project={project} tasks={tasks} onRefresh={fetchProjectDetail} />}
       </div>
 
       <ConfirmModal 
@@ -274,9 +256,12 @@ function ProjectInfo({ project, onRefresh }) {
         name: form.name,
         code: form.code || null,
         projectType: form.projectType || null,
-        status: form.status || null,
+        status: form.status || undefined,
         priority: form.priority || null,
         description: form.description || null,
+        budget: form.budget ? parseFloat(form.budget) : undefined,
+        startDate: form.startDate ? form.startDate : undefined,
+        targetEndDate: form.targetEndDate ? form.targetEndDate : undefined,
         clientName: form.clientName || null,
         clientContactPerson: form.clientContactPerson || null,
         clientPhone: form.clientPhone || null,
@@ -293,7 +278,11 @@ function ProjectInfo({ project, onRefresh }) {
       await projectService.update(project.id, payload);
       toast.success('Project details updated successfully');
       setShowEditModal(false);
-      if (onRefresh) onRefresh();
+      try {
+        await fetchProjectDetail();
+      } catch {
+        // Ignored as update succeeded
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update project details');
     } finally {
@@ -784,17 +773,20 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
               <span className={`status-pill ${task.status === 'COMPLETED' ? 'p-nt' : task.status === 'IN_PROGRESS' ? 'p-ok' : 'p-in'}`}>
                 {task.status}
               </span>
-              {(task.completionNotes || task.completionImageUrl) && (
+              {(task.completionNotes || task.completionImageUrl || task.imageUrl || (task.proofHistory && task.proofHistory.length > 0)) && (
                 <button 
                   className="btn btn-icon btn-ghost btn-xs text-success"
-                  title="View Completion Proof"
+                  title="View Site Photo Proofs"
                   onClick={(e) => {
                     e.stopPropagation();
                     setViewProofTask(task);
                   }}
-                  style={{ padding: '2px', display: 'inline-flex', alignItems: 'center' }}
+                  style={{ padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: 3, borderRadius: 12, background: 'var(--bg-tertiary)', border: '1px solid var(--border-secondary)' }}
                 >
-                  <Camera size={14} style={{ color: 'var(--accent-primary)' }} />
+                  <Camera size={13} style={{ color: 'var(--accent-primary)' }} />
+                  {task.proofHistory && Array.isArray(task.proofHistory) && task.proofHistory.length > 1 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-primary)' }}>{task.proofHistory.length}</span>
+                  )}
                 </button>
               )}
             </div>
@@ -891,12 +883,16 @@ function ProjectWBS({ projectId, isBuilder, initialTasks, onRefresh, onAddTask, 
       />
 
       {viewProofTask && (
-        <CompletionProofViewModal
-          taskName={viewProofTask.name}
-          notes={viewProofTask.completionNotes}
-          imageUrl={viewProofTask.completionImageUrl}
-          onClose={() => setViewProofTask(null)}
-        />
+        <ModalErrorBoundary onClose={() => setViewProofTask(null)}>
+          <CompletionProofViewModal
+            taskId={viewProofTask.id}
+            taskName={viewProofTask.name}
+            notes={viewProofTask.completionNotes || viewProofTask.description}
+            imageUrl={viewProofTask.completionImageUrl || viewProofTask.imageUrl}
+            onClose={() => setViewProofTask(null)}
+            onRefresh={onRefresh}
+          />
+        </ModalErrorBoundary>
       )}
     </div>
   );
@@ -1909,6 +1905,208 @@ function ProjectFinance({ project }) {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Uploaded Files & Gallery Tab Component ──────────────────────────────
+function ProjectFilesTab({ project, tasks, onRefresh }) {
+  const [customFiles, setCustomFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const toast = useToast();
+
+  const taskPhotos = useMemo(() => {
+    const list = [];
+    const extractPhotos = (taskList) => {
+      if (!Array.isArray(taskList)) return;
+      for (const t of taskList) {
+        if (!t) continue;
+        // Extract multi-stage proof history (e.g. 70%, 100% photo logs)
+        let history = t.proofHistory;
+        if (typeof history === 'string') {
+          try { history = JSON.parse(history); } catch { history = null; }
+        }
+        if (Array.isArray(history) && history.length > 0) {
+          for (const item of history) {
+            if (!item.url) continue;
+            list.push({
+              id: `${t.id}-${item.timestamp || Math.random()}`,
+              name: t.name,
+              url: item.url,
+              source: `Task Proof (${item.progress}% )`,
+              date: item.timestamp || t.updatedAt || t.createdAt,
+              notes: item.notes || t.completionNotes || t.description || `Site proof for ${item.progress}% completion`
+            });
+          }
+        } else if (t.completionImageUrl || t.imageUrl) {
+          list.push({
+            id: t.id,
+            name: t.name,
+            url: t.completionImageUrl || t.imageUrl,
+            source: `Task Proof (${t.progress}%)`,
+            date: t.updatedAt || t.createdAt,
+            notes: t.completionNotes || t.description || 'Task completion proof photo'
+          });
+        }
+        if (t.subTasks) extractPhotos(t.subTasks);
+      }
+    };
+    extractPhotos(tasks);
+    return list;
+  }, [tasks]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      if (toast?.warning) toast.warning('File size must be under 10MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      let publicUrl = '';
+      if (supabase) {
+        if (toast?.info) toast.info('Uploading file to cloud storage...');
+        publicUrl = await uploadFile(file);
+        if (toast?.success) toast.success('File uploaded to cloud bucket!');
+      } else {
+        publicUrl = await new Promise(r => {
+          const reader = new FileReader();
+          reader.onload = evt => r(evt.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const newFileObj = {
+        id: Date.now().toString(),
+        name: file.name,
+        url: publicUrl,
+        source: 'Uploaded File',
+        date: new Date().toISOString(),
+        notes: `Direct project upload (${(file.size / 1024).toFixed(1)} KB)`
+      };
+      setCustomFiles(prev => [newFileObj, ...prev]);
+    } catch (err) {
+      console.error('File upload error:', err);
+      if (toast?.error) toast.error('Failed to upload file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const allFiles = [...customFiles, ...taskPhotos];
+
+  return (
+    <div className="finance-labour-view animate-fade-up">
+      <div className="erp-card">
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15 }}>
+            📁 Uploaded Files & Site Gallery ({allFiles.length})
+          </span>
+          <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+            <input type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileUpload} style={{ display: 'none' }} disabled={uploading} />
+            <Upload size={14} /> {uploading ? 'Uploading...' : 'Upload New File'}
+          </label>
+        </div>
+
+        {allFiles.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-muted)' }}>
+            <Upload size={36} style={{ marginBottom: 12, opacity: 0.5, display: 'inline-block' }} /><br/>
+            <strong style={{ color: 'var(--text-primary)', fontSize: 14 }}>No files uploaded for this project yet.</strong><br/>
+            <span style={{ fontSize: 12 }}>Upload blueprints, site photos, or mark WBS tasks as completed to populate this gallery.</span>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, padding: 16 }}>
+            {allFiles.map(f => (
+              <div 
+                key={f.id} 
+                style={{ 
+                  border: '1px solid var(--border-primary)', 
+                  borderRadius: 8, 
+                  overflow: 'hidden', 
+                  background: 'var(--bg-secondary)',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <div 
+                  style={{ 
+                    height: 140, 
+                    background: 'var(--bg-tertiary)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}
+                  onClick={() => setPreviewImage(f)}
+                >
+                  {f.url.match(/\.(jpeg|jpg|gif|png|webp)/i) || f.url.startsWith('data:image') ? (
+                    <img src={f.url} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <Camera size={32} /><br/>
+                      <span style={{ fontSize: 11 }}>{f.name.split('.').pop()?.toUpperCase()} Document</span>
+                    </div>
+                  )}
+                  <span 
+                    className="badge badge-purple" 
+                    style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, padding: '2px 6px' }}
+                  >
+                    {f.source}
+                  </span>
+                </div>
+
+                <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={f.name}>
+                    {f.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    {f.date ? new Date(f.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4, flex: 1 }}>
+                    {f.notes}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                    <button 
+                      className="btn btn-xs btn-secondary" 
+                      style={{ flex: 1, fontSize: 11, padding: '4px 8px' }}
+                      onClick={() => setPreviewImage(f)}
+                    >
+                      👁️ Preview
+                    </button>
+                    <a 
+                      href={f.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-xs btn-ghost"
+                      style={{ fontSize: 11, padding: '4px 8px', textDecoration: 'none' }}
+                      download
+                    >
+                      ⬇️ Open
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {previewImage && (
+        <CompletionProofViewModal
+          taskId={previewImage.id}
+          taskName={previewImage.name}
+          notes={previewImage.notes}
+          imageUrl={previewImage.url}
+          onClose={() => setPreviewImage(null)}
+          onRefresh={onRefresh}
+        />
+      )}
     </div>
   );
 }

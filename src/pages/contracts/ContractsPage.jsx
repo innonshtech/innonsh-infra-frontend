@@ -15,7 +15,6 @@ export default function ContractsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
   const [deleteConfig, setDeleteConfig] = useState({ show: false, contractId: null });
   const toast = useToast();
@@ -23,7 +22,6 @@ export default function ContractsPage() {
   const loadContracts = async () => {
     try {
       const params = {};
-      if (filterStatus) params.status = filterStatus;
       if (filterType) params.partyType = filterType;
       const { data } = await contractService.getAll(params);
       setContracts(data.data || []);
@@ -46,7 +44,7 @@ export default function ContractsPage() {
     init();
   }, []);
 
-  useEffect(() => { loadContracts(); }, [filterStatus, filterType]);
+  useEffect(() => { loadContracts(); }, [filterType]);
 
   const handleSubmit = async (formData) => {
     try {
@@ -99,7 +97,6 @@ export default function ContractsPage() {
 
   const totalValue = contracts.reduce((s, c) => s + (c.totalValue || 0), 0);
   const totalPaid = contracts.reduce((s, c) => s + (c.paidAmount || 0), 0);
-  const activeCount = contracts.filter(c => c.status === 'ACTIVE').length;
 
   return (
     <PageWrapper
@@ -133,8 +130,8 @@ export default function ContractsPage() {
         </div>
         <div className="stat-card">
           <div className="flex flex-col">
-            <span className="text-sm text-muted font-medium">Active Contracts</span>
-            <span className="text-2xl font-bold tracking-tight text-primary">{activeCount}</span>
+            <span className="text-sm text-muted font-medium">Total Contracts</span>
+            <span className="text-2xl font-bold tracking-tight text-primary">{contracts.length}</span>
           </div>
         </div>
       </div>
@@ -142,10 +139,6 @@ export default function ContractsPage() {
       {/* Advanced Filters */}
       <div className="filters-bar card-flat flex items-center justify-between gap-md mb-md p-sm" style={{ background: 'var(--bg-secondary)', borderRadius: 8 }}>
         <div className="flex items-center gap-sm flex-1">
-          <select className="form-select" style={{ maxWidth: '200px' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="">Filter by Status</option>
-            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
           <select className="form-select" style={{ maxWidth: '200px' }} value={filterType} onChange={e => setFilterType(e.target.value)}>
             <option value="">Filter by Type</option>
             {PARTY_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
@@ -197,9 +190,13 @@ export default function ContractsPage() {
                   </div>
                 </td>
                 <td>
-                  <span className={`badge ${c.status === 'ACTIVE' ? 'badge-green' : c.status === 'DRAFT' ? 'badge-gray' : c.status === 'COMPLETED' ? 'badge-blue' : 'badge-red'}`}>
-                    {c.status}
-                  </span>
+                  {c.paidAmount === 0 ? (
+                    <span className="badge badge-red" style={{ fontSize: 11, fontWeight: 600 }}>⏳ Unpaid</span>
+                  ) : c.paidAmount < c.totalValue ? (
+                    <span className="badge badge-blue" style={{ fontSize: 11, fontWeight: 600 }}>⏳ Partially Paid</span>
+                  ) : (
+                    <span className="badge badge-green" style={{ fontSize: 11, fontWeight: 600 }}>✅ Paid & Approved</span>
+                  )}
                 </td>
                 <td className="text-right">
                   <div className="flex gap-xs justify-end">
@@ -384,7 +381,7 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
             </div>
 
             {/* Group B: Classification Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
               <div className="form-group">
                 <label className="form-label text-xs font-bold">Category</label>
                 <select className="form-select" value={form.partyType} onChange={e => setForm({...form, partyType: e.target.value})}>
@@ -395,12 +392,6 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
                 <label className="form-label text-xs font-bold">Contract Model</label>
                 <select className="form-select" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
                   {CONTRACT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label text-xs font-bold">Operational Lifecycle</label>
-                <select className="form-select font-bold text-primary" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </div>

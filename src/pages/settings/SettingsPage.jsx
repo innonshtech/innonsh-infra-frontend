@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PageWrapper from '../../components/layout/PageWrapper';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -11,6 +12,25 @@ import {
 import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const PERMISSION_GROUPS = [
+  { module: 'Dashboard', key: 'dashboard', perms: [
+    { id: 'dashboard.view', label: 'View Access' },
+  ]},
+  { module: 'AI Board', key: 'aiBoard', perms: [
+    { id: 'aiBoard.view', label: 'View Access' },
+  ]},
+  { module: 'Organization & Settings', key: 'settings', perms: [
+    { id: 'organization.view', label: 'View' },
+    { id: 'organization.manage', label: 'Create / Edit / Delete' },
+  ]},
+  { module: 'Staff & Roles', key: 'users', perms: [
+    { id: 'users.view', label: 'View' },
+    { id: 'users.create', label: 'Invite' },
+    { id: 'users.update', label: 'Edit / Roles' },
+    { id: 'users.delete', label: 'Delete' },
+  ]},
+  { module: 'Reports & Analytics', key: 'reports', perms: [
+    { id: 'reports.view', label: 'View Access' },
+  ]},
   { module: 'Projects & Tasks', key: 'projects', perms: [
     { id: 'projects.view', label: 'View' },
     { id: 'projects.create', label: 'Create' },
@@ -23,6 +43,10 @@ const PERMISSION_GROUPS = [
     { id: 'estimations.create', label: 'Create' },
     { id: 'estimations.update', label: 'Edit / Approve' },
     { id: 'estimations.delete', label: 'Delete' },
+  ]},
+  { module: 'Contracts', key: 'contracts', erp: 'CONTRACTOR', perms: [
+    { id: 'contracts.view', label: 'View' },
+    { id: 'contracts.manage', label: 'Create / Edit / Delete' },
   ]},
   { module: 'Finance & Invoices', key: 'finance', perms: [
     { id: 'finance.view', label: 'View' },
@@ -37,11 +61,36 @@ const PERMISSION_GROUPS = [
     { id: 'procurement.create', label: 'Create' },
     { id: 'procurement.approve', label: 'Approve' },
   ]},
-  { module: 'Labour & Attendance', key: 'labour', perms: [
+  { module: 'Labour & Attendance', key: 'labour', erp: 'CONTRACTOR', perms: [
     { id: 'labour.manage', label: 'Full Access' },
   ]},
-  { module: 'Equipment & Maintenance', key: 'equipment', perms: [
+  { module: 'Equipment & Maintenance', key: 'equipment', erp: 'CONTRACTOR', perms: [
     { id: 'equipment.manage', label: 'Full Access' },
+  ]},
+  // Builder ERP Modules
+  { module: 'Units Management', key: 'units', erp: 'BUILDER', perms: [
+    { id: 'units.view', label: 'View' },
+    { id: 'units.manage', label: 'Create / Edit / Delete' },
+  ]},
+  { module: 'Bookings', key: 'bookings', erp: 'BUILDER', perms: [
+    { id: 'bookings.view', label: 'View' },
+    { id: 'bookings.manage', label: 'Create / Edit / Delete' },
+  ]},
+  { module: 'Billing', key: 'billing', erp: 'BUILDER', perms: [
+    { id: 'billing.view', label: 'View' },
+    { id: 'billing.manage', label: 'Create / Edit / Delete' },
+  ]},
+  { module: 'CRM / Brokers', key: 'crm', erp: 'BUILDER', perms: [
+    { id: 'crm.view', label: 'View' },
+    { id: 'crm.manage', label: 'Create / Edit / Delete' },
+  ]},
+  { module: 'Lease Management', key: 'lease', erp: 'BUILDER', perms: [
+    { id: 'lease.view', label: 'View' },
+    { id: 'lease.manage', label: 'Create / Edit / Delete' },
+  ]},
+  { module: 'Legal & Compliance', key: 'legal', erp: 'BUILDER', perms: [
+    { id: 'legal.view', label: 'View' },
+    { id: 'legal.manage', label: 'Create / Edit / Delete' },
   ]},
 ];
 
@@ -80,19 +129,26 @@ const PREDEFINED_ROLES = [
   ]}
 ];
 
-const getRoleFromPermissions = (permissions = []) => {
+const getRoleFromPermissions = (permissions = [], designations = []) => {
   if (permissions.includes('*')) return 'Owner';
   if (!permissions || permissions.length === 0) return 'Member';
   const sortedUserPerms = [...permissions].sort().join(',');
-  const matchedRole = PREDEFINED_ROLES.find(r => [...r.perms].sort().join(',') === sortedUserPerms);
-  return matchedRole ? matchedRole.name : 'Custom';
+  const matchedDes = designations.find(d => [...(d.permissions || [])].sort().join(',') === sortedUserPerms);
+  return matchedDes ? matchedDes.name : 'Custom';
 };
 
 // Permission Checklist Component
 function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
+  const { erpType } = useAuth();
   const isOwner = permissions.includes('*');
-  const allCheckedGlobal = isOwner || ALL_PERM_IDS.every(id => permissions.includes(id));
-  const someCheckedGlobal = !isOwner && ALL_PERM_IDS.some(id => permissions.includes(id));
+  
+  // Filter permission groups based on company ERP type (Contractor vs. Builder)
+  const activeGroups = PERMISSION_GROUPS.filter(g => !g.erp || g.erp === erpType);
+  const activePermIds = activeGroups.flatMap(g => g.perms.map(p => p.id));
+
+  const allCheckedGlobal = isOwner || activePermIds.every(id => permissions.includes(id));
+  const someCheckedGlobal = !isOwner && activePermIds.some(id => permissions.includes(id));
+  
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
       <label style={{
@@ -112,11 +168,11 @@ function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
           checked={allCheckedGlobal}
           disabled={isOwner}
           ref={el => { if (el) el.indeterminate = someCheckedGlobal && !allCheckedGlobal; }}
-          onChange={() => onToggleGroup(ALL_PERM_IDS, !allCheckedGlobal)}
+          onChange={() => onToggleGroup(activePermIds, !allCheckedGlobal)}
         />
         Full Access — All Modules (Owner)
       </label>
-      {PERMISSION_GROUPS.map(group => {
+      {activeGroups.map(group => {
         const groupPermIds = group.perms.map(p => p.id);
         const allChecked = isOwner || groupPermIds.every(id => permissions.includes(id));
         const someChecked = !isOwner && groupPermIds.some(id => permissions.includes(id));
@@ -171,8 +227,42 @@ function PermissionGrid({ permissions, onToggle, onToggleGroup }) {
 
 export default function SettingsPage() {
   const { user, updateCompany } = useAuth();
-  const [tab, setTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [tab, setTab] = useState(tabParam || 'profile');
   const toast = useToast();
+
+  const canAccessTab = (tabKey) => {
+    if (!user) return false;
+    const role = user.role?.toUpperCase();
+    const permissions = new Set(user.permissions || []);
+    
+    if (role === 'OWNER' || permissions.has('*')) return true;
+    
+    if (tabKey === 'team') {
+      return permissions.has('users.view');
+    }
+    
+    return permissions.has('organization.view') || permissions.has('organization.manage');
+  };
+
+  const availableTabs = [
+    { key: 'profile', label: 'Company Profile', icon: Building },
+    { key: 'branches', label: 'Branches / Offices', icon: MapPin },
+    { key: 'departments', label: 'Departments', icon: Briefcase },
+    { key: 'designations', label: 'Designations', icon: Award },
+    { key: 'documents', label: 'Company Documents', icon: FileText },
+    { key: 'settings', label: 'General Settings', icon: Sliders },
+    { key: 'team', label: 'Team & Security', icon: Users },
+  ].filter(t => canAccessTab(t.key));
+
+  useEffect(() => {
+    if (tabParam) {
+      setTab(tabParam);
+    } else if (availableTabs.length > 0 && !availableTabs.some(t => t.key === tab)) {
+      setTab(availableTabs[0].key);
+    }
+  }, [tabParam, availableTabs, tab]);
 
   // State Management
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -463,26 +553,49 @@ export default function SettingsPage() {
     }
   };
 
+  const [newDesPerms, setNewDesPerms] = useState([]);
+  const [editingDes, setEditingDes] = useState(null);
+
   const handleAddDesignation = async (e) => {
     e.preventDefault();
     if (!newDesName.trim() || isSavingDesignation) return;
     setIsSavingDesignation(true);
     try {
-      await organizationService.createDesignation({ name: newDesName });
-      toast.success('Designation created');
+      if (editingDes) {
+        await organizationService.updateDesignation(editingDes.id, { name: newDesName, permissions: newDesPerms });
+        toast.success('Designation updated');
+      } else {
+        await organizationService.createDesignation({ name: newDesName, permissions: newDesPerms });
+        toast.success('Designation created');
+      }
       setNewDesName('');
+      setNewDesPerms([]);
+      setEditingDes(null);
       loadDesignations();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create designation');
+      toast.error(err.response?.data?.message || 'Failed to save designation');
     } finally {
       setIsSavingDesignation(false);
     }
+  };
+
+  const handleStartEditDes = (d) => {
+    setEditingDes(d);
+    setNewDesName(d.name);
+    setNewDesPerms(d.permissions || []);
+  };
+
+  const handleCancelEditDes = () => {
+    setEditingDes(null);
+    setNewDesName('');
+    setNewDesPerms([]);
   };
 
   const handleDeleteDesignation = async (id) => {
     try {
       await organizationService.deleteDesignation(id);
       toast.success('Designation removed');
+      if (editingDes?.id === id) handleCancelEditDes();
       loadDesignations();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete designation');
@@ -556,6 +669,7 @@ export default function SettingsPage() {
     }
   };
 
+
   return (
     <PageWrapper
       title="Organization Settings"
@@ -578,15 +692,7 @@ export default function SettingsPage() {
     >
       {/* Horizontal Tabs Row */}
       <div className="projects-filters" style={{ marginBottom: 'var(--space-lg)', flexWrap: 'wrap', gap: '6px' }}>
-        {[
-          { key: 'profile', label: 'Company Profile', icon: Building },
-          { key: 'branches', label: 'Branches / Offices', icon: MapPin },
-          { key: 'departments', label: 'Departments', icon: Briefcase },
-          { key: 'designations', label: 'Designations', icon: Award },
-          { key: 'documents', label: 'Company Documents', icon: FileText },
-          { key: 'settings', label: 'General Settings', icon: Sliders },
-          { key: 'team', label: 'Team & Security', icon: Users },
-        ].map(t => (
+        {availableTabs.map(t => (
           <button key={t.key} className={`tab ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
             <t.icon size={13} style={{ marginRight: 6 }} /> {t.label}
           </button>
@@ -801,43 +907,91 @@ export default function SettingsPage() {
 
           {/* TAB 4: DESIGNATIONS */}
           {tab === 'designations' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'var(--space-xl)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: 'var(--space-xl)' }}>
               <div className="card-flat" style={{ padding: 'var(--space-lg)', alignSelf: 'start' }}>
-                <h3>Add Designation</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+                  <h3 style={{ margin: 0 }}>{editingDes ? 'Edit Designation' : 'Add Designation'}</h3>
+                  {editingDes && (
+                    <button type="button" className="btn btn-secondary btn-xs" onClick={handleCancelEditDes}>
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
                 <form onSubmit={handleAddDesignation}>
                   <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
                     <label className="form-label">Designation Name *</label>
                     <input 
                       className="form-input" 
-                      placeholder="e.g. Site Engineer" 
+                      placeholder="e.g. Site Supervisor, Billing Engineer" 
                       value={newDesName} 
                       onChange={e => setNewDesName(e.target.value)} 
                     />
                   </div>
-                  <button type="submit" className="btn btn-primary w-full" disabled={isSavingDesignation}>{isSavingDesignation ? 'Creating...' : 'Create Designation'}</button>
+
+                  <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
+                    <label className="form-label" style={{ marginBottom: 'var(--space-xs)' }}>Allowed Module Permissions</label>
+                    <p className="text-xs text-muted" style={{ margin: '0 0 10px 0' }}>Select which modules users with this designation can access.</p>
+                    <PermissionGrid 
+                      permissions={newDesPerms}
+                      onToggle={id => setNewDesPerms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])}
+                      onToggleGroup={(groupIds, selectAll) => {
+                        setNewDesPerms(prev => {
+                          const withoutGroup = prev.filter(p => !groupIds.includes(p));
+                          return selectAll ? [...withoutGroup, ...groupIds] : withoutGroup;
+                        });
+                      }}
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary w-full" disabled={isSavingDesignation}>
+                    {isSavingDesignation ? 'Saving...' : editingDes ? 'Update Designation' : 'Create Designation'}
+                  </button>
                 </form>
               </div>
 
               <div className="card-flat" style={{ padding: 'var(--space-lg)' }}>
-                <h3>Registered Designations</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
+                <h3>Registered Organization Roles / Designations</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
                   {designations.map(d => (
                     <div key={d.id} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '10px 14px', background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                      padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)',
                       borderRadius: 'var(--radius-md)'
                     }}>
-                      <span style={{ fontWeight: 600, fontSize: '13px' }}>{d.name}</span>
-                      <button 
-                        onClick={() => handleDeleteDesignation(d.id)} 
-                        style={{ border: 'none', background: 'transparent', color: 'var(--text-danger)', cursor: 'pointer' }}
-                        title="Delete Designation"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{d.name}</span>
+                          <span className="badge badge-purple text-xs">{(d.permissions || []).length} perms</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                          {(d.permissions || []).length === 0 ? (
+                            <span className="text-xs text-muted">No module permissions assigned</span>
+                          ) : (d.permissions || []).map(p => (
+                            <span key={p} className="badge badge-blue text-xs">{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button 
+                          type="button"
+                          onClick={() => handleStartEditDes(d)} 
+                          className="btn btn-icon btn-ghost text-primary"
+                          title="Edit Designation & Permissions"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteDesignation(d.id)} 
+                          className="btn btn-icon btn-ghost text-danger"
+                          title="Delete Designation"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
-                  {designations.length === 0 && <div className="text-muted" style={{ gridColumn: 'span 3', padding: 'var(--space-md)' }}>No designations active.</div>}
+                  {designations.length === 0 && <div className="text-muted" style={{ padding: 'var(--space-md)' }}>No custom designations added yet.</div>}
                 </div>
               </div>
             </div>
@@ -950,7 +1104,7 @@ export default function SettingsPage() {
                       <tr key={u.id}>
                         <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{u.firstName} {u.lastName}</td>
                         <td><div className="flex items-center gap-xs"><Mail size={13} style={{ color: 'var(--text-muted)' }} />{u.email}</div></td>
-                        <td><span className="badge badge-purple">{u.role?.name || getRoleFromPermissions(u.permissions)}</span></td>
+                        <td><span className="badge badge-purple">{u.role?.name || getRoleFromPermissions(u.permissions, designations)}</span></td>
                         <td>{u.isActive ? <span className="badge badge-green">Active</span> : <span className="badge badge-red">Inactive</span>}</td>
                         <td>
                           <div className="flex gap-xs">
@@ -1091,12 +1245,15 @@ function InviteMemberModal({ designations = [], onClose, onCreated }) {
 
   const handleRoleChange = (e) => {
     const selectedRoleName = e.target.value;
-    const roleObj = PREDEFINED_ROLES.find(r => r.name.toLowerCase() === selectedRoleName.toLowerCase());
-    
+    if (selectedRoleName === 'Owner') {
+      setForm(prev => ({ ...prev, role: 'Owner', permissions: ['*'] }));
+      return;
+    }
+    const desObj = designations.find(d => d.name.toLowerCase() === selectedRoleName.toLowerCase());
     setForm(prev => ({
       ...prev,
       role: selectedRoleName,
-      permissions: roleObj ? roleObj.perms : []
+      permissions: desObj ? (desObj.permissions || []) : prev.permissions
     }));
   };
 
@@ -1147,16 +1304,16 @@ function InviteMemberModal({ designations = [], onClose, onCreated }) {
             <div className="form-group"><label className="form-label">Password *</label><input className="form-input" type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} /></div>
             
             <div className="form-group" style={{ paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-secondary)' }}>
-              <label className="form-label">Role Template</label>
+              <label className="form-label">Role Template / Designation</label>
               <select className="form-input" value={form.role} onChange={handleRoleChange}>
-                <option value="" disabled>Select a role/designation...</option>
-                <option value="Owner">Owner</option>
+                <option value="" disabled>Select a designation from your organization...</option>
+                <option value="Owner">Owner (Full Access)</option>
                 {designations.map(d => (
                   <option key={d.id} value={d.name}>{d.name}</option>
                 ))}
-                {form.role === 'Custom' && <option value="Custom">Custom Permissions</option>}
+                <option value="Custom">Custom Permissions</option>
               </select>
-              <p className="text-xs text-muted mt-xs">Select a designation to auto-fill, or customize below.</p>
+              <p className="text-xs text-muted mt-xs">Select your company designation to auto-fill permissions, or customize below.</p>
             </div>
 
             <div className="form-group">
@@ -1184,32 +1341,25 @@ function EditMemberModal({ designations = [], member, onClose, onUpdated }) {
   const toast = useToast();
 
   useEffect(() => {
-    if (!member.permissions || member.permissions.length === 0) return;
-    const sortedUserPerms = [...member.permissions].sort().join(',');
-    const matchedRole = PREDEFINED_ROLES.find(r => [...r.perms].sort().join(',') === sortedUserPerms);
-    
-    if (matchedRole) {
-      if (matchedRole.name === 'Owner') {
-        setForm(prev => ({ ...prev, role: 'Owner' }));
-        return;
-      }
-      const matchedDesignation = designations.find(d => d.name.toLowerCase() === matchedRole.name.toLowerCase());
-      if (matchedDesignation) {
-        setForm(prev => ({ ...prev, role: matchedDesignation.name }));
-        return;
-      }
+    if (!member.permissions || member.permissions.length === 0) {
+      setForm({ role: 'Custom', permissions: [] });
+      return;
     }
-    setForm(prev => ({ ...prev, role: 'Custom' }));
+    const matchedRoleName = getRoleFromPermissions(member.permissions, designations);
+    setForm({ role: matchedRoleName, permissions: member.permissions || [] });
   }, [member, designations]);
 
   const handleRoleChange = (e) => {
     const selectedRoleName = e.target.value;
-    const roleObj = PREDEFINED_ROLES.find(r => r.name.toLowerCase() === selectedRoleName.toLowerCase());
-    
+    if (selectedRoleName === 'Owner') {
+      setForm(prev => ({ ...prev, role: 'Owner', permissions: ['*'] }));
+      return;
+    }
+    const desObj = designations.find(d => d.name.toLowerCase() === selectedRoleName.toLowerCase());
     setForm(prev => ({
       ...prev,
       role: selectedRoleName,
-      permissions: roleObj ? roleObj.perms : prev.permissions
+      permissions: desObj ? (desObj.permissions || []) : prev.permissions
     }));
   };
 
@@ -1256,14 +1406,14 @@ function EditMemberModal({ designations = [], member, onClose, onUpdated }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
             <div style={{ padding: 'var(--space-md)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-              <h4 style={{ margin: '0 0 var(--space-sm) 0', fontSize: '14px' }}>Role Template</h4>
+              <h4 style={{ margin: '0 0 var(--space-sm) 0', fontSize: '14px' }}>Role Template / Designation</h4>
               <select className="form-select" value={form.role} onChange={handleRoleChange}>
-                <option value="" disabled>Select a role/designation...</option>
-                <option value="Owner">Owner</option>
+                <option value="" disabled>Select a designation from your organization...</option>
+                <option value="Owner">Owner (Full Access)</option>
                 {designations.map(d => (
                   <option key={d.id} value={d.name}>{d.name}</option>
                 ))}
-                {form.role === 'Custom' && <option value="Custom">Custom Permissions</option>}
+                <option value="Custom">Custom Permissions</option>
               </select>
             </div>
             <div className="form-group mb-0">

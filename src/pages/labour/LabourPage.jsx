@@ -396,6 +396,40 @@ export default function LabourPage() {
     }
   };
 
+  const handleLockDailyAttendance = async () => {
+    if (isLocked || savingAtt) return;
+    if (!attRecords || attRecords.length === 0) {
+      toast.warning('No attendance records found to lock for this date.');
+      return;
+    }
+    try {
+      setSavingAtt(true);
+      
+      // Always save current state before locking to ensure db records exist
+      const records = attRecords.map(r => ({
+        workerId: r.workerId,
+        projectId: r.projectId || undefined,
+        date: attDate,
+        status: r.status,
+        wageAmount: r.wageAmount,
+        overtimeHrs: parseFloat(r.overtimeHrs) || 0,
+        notes: r.notes || ''
+      }));
+      await labourService.saveAttendance(records);
+      
+      await labourService.approveAttendance({ date: attDate, projectId: attProject || null });
+      toast.success(`Attendance for ${attDate} has been LOCKED successfully!`);
+      setIsLocked(true);
+      setAttDirty(false);
+      loadAttendance();
+    } catch (e) {
+      console.error(e);
+      toast.error(e.response?.data?.message || 'Failed to lock attendance');
+    } finally {
+      setSavingAtt(false);
+    }
+  };
+
   const handleApproveDaily = async (date, projectId) => {
     try {
       await labourService.approveAttendance({ date, projectId });
@@ -537,12 +571,17 @@ export default function LabourPage() {
     XLSX.writeFile(wb, `attendance_register_vertical_${registerYear}_${registerMonth}.xlsx`);
   };
 
+  const [dailyDate, setDailyDate] = useState(attDate || new Date().toISOString().split('T')[0]);
+
   // Payroll helpers
   const loadPayroll = async () => {
     try {
       const now = new Date();
       let startDate, endDate;
-      if (payPeriod === 'week') {
+      if (payPeriod === 'day') {
+        startDate = dailyDate;
+        endDate = dailyDate;
+      } else if (payPeriod === 'week') {
         const dayOfWeek = now.getDay();
         const start = new Date(now);
         start.setDate(now.getDate() - dayOfWeek);
@@ -559,7 +598,7 @@ export default function LabourPage() {
 
   useEffect(() => {
     if (activeTab === 'wages') loadPayroll();
-  }, [activeTab, payPeriod]);
+  }, [activeTab, payPeriod, dailyDate]);
 
   const handleEditWorker = async (e) => {
     e.preventDefault();
@@ -737,24 +776,16 @@ export default function LabourPage() {
           <button className="btn-pp" onClick={() => setShowAddModal(true)}>+ Add worker</button>
         )}
         {activeTab === 'attendance' && attSubTab === 'entry' && !isLocked && (
-          <>
-            <button className="btn-bp" onClick={markAllPresent} disabled={savingAtt}>Mark all present</button>
-            <button className="btn-pp" onClick={saveAttendance} disabled={!attDirty || savingAtt}>
-              {savingAtt ? 'Saving...' : 'Save attendance'}
-            </button>
-          </>
+          <button className="btn-bp" onClick={markAllPresent} disabled={savingAtt}>Mark all present</button>
         )}
         {activeTab === 'wages' && (
-          <>
-            <button 
-              className="btn-gp" 
-              onClick={() => generatePayrollPDF(payData, payPeriod === 'week' ? 'Weekly' : 'Monthly')}
-              disabled={!payData.breakdown || payData.breakdown.length === 0}
-            >
-              Download PDF
-            </button>
-            <button className="btn-pp">Process payroll</button>
-          </>
+          <button 
+            className="btn-gp" 
+            onClick={() => generatePayrollPDF(payData, payPeriod === 'week' ? 'Weekly' : 'Monthly')}
+            disabled={!payData.breakdown || payData.breakdown.length === 0}
+          >
+            Download PDF
+          </button>
         )}
       </div>
 
@@ -891,24 +922,55 @@ export default function LabourPage() {
           <div className="attendance-sub-tabs">
             <button type="button" className={`att-sub-tab ${attSubTab === 'entry' ? 'act' : ''}`} onClick={() => setAttSubTab('entry')}>Daily Entry</button>
             <button type="button" className={`att-sub-tab ${attSubTab === 'register' ? 'act' : ''}`} onClick={() => setAttSubTab('register')}>Monthly Register</button>
-            <button type="button" className={`att-sub-tab ${attSubTab === 'approval' ? 'act' : ''}`} onClick={() => setAttSubTab('approval')}>PM Approvals ({pendingApprovals.length})</button>
             <button type="button" className={`att-sub-tab ${attSubTab === 'corrections' ? 'act' : ''}`} onClick={() => setAttSubTab('corrections')}>Audit Corrections</button>
           </div>
 
           {/* 1. DAILY ENTRY */}
           {attSubTab === 'entry' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="att-controls">
-                <div className="att-field">
-                  <span className="att-label">Date</span>
-                  <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="att-input" />
+              <div className="att-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div className="att-field">
+                    <span className="att-label">Date</span>
+                    <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="att-input" />
+                  </div>
+                  <div className="att-field">
+                    <span className="att-label">Site / Project</span>
+                    <select value={attProject} onChange={e => setAttProject(e.target.value)} className="att-select">
+                      <option value="">All projects</option>
+                      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
                 </div>
-                <div className="att-field">
-                  <span className="att-label">Site / Project</span>
-                  <select value={attProject} onChange={e => setAttProject(e.target.value)} className="att-select">
-                    <option value="">All projects</option>
-                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button 
+                    type="button" 
+                    className="btn-pp" 
+                    style={{ height: 32, padding: '0 14px', fontSize: 12 }} 
+                    onClick={saveAttendance} 
+                    disabled={isLocked || savingAtt}
+                  >
+                    {savingAtt ? 'Saving...' : '💾 Save Attendance'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn" 
+                    style={{ 
+                      height: 32, 
+                      padding: '0 14px', 
+                      fontSize: 12, 
+                      fontWeight: 600,
+                      background: isLocked ? '#059669' : '#dc2626', 
+                      color: '#fff', 
+                      border: 'none',
+                      cursor: isLocked ? 'not-allowed' : 'pointer'
+                    }} 
+                    onClick={handleLockDailyAttendance} 
+                    disabled={isLocked || savingAtt}
+                  >
+                    {isLocked ? '🔒 Ledger Locked' : '🔒 Lock Attendance'}
+                  </button>
                 </div>
               </div>
 
@@ -1108,37 +1170,7 @@ export default function LabourPage() {
             </div>
           )}
 
-          {/* 3. PM APPROVALS */}
-          {attSubTab === 'approval' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="labour-page-title" style={{ fontSize: 13, marginBottom: 4 }}>Daily Ledger Approvals</div>
-              <div className="pending-approvals-list">
-                {pendingApprovals.length === 0 ? (
-                  <div className="erp-card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}>✅</div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>All Ledgers Approved</div>
-                    <div style={{ fontSize: 11, marginTop: 4 }}>No daily attendance lists are pending approval.</div>
-                  </div>
-                ) : pendingApprovals.map(item => (
-                  <div className="pending-approval-card animate-fade-in" key={`${item.date}_${item.projectId}`}>
-                    <div className="pac-info">
-                      <div className="pac-title">{item.projectName}</div>
-                      <div className="pac-meta">
-                        <span>📅 {new Date(item.date).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>
-                        <span>👥 {item.totalWorkers} workers logged</span>
-                        <span>💰 Estimated Pay: <strong>{formatCurrency(item.totalWage)}</strong></span>
-                      </div>
-                    </div>
-                    <div className="pac-actions">
-                      <button type="button" className="btn-pp" onClick={() => handleApproveDaily(item.date, item.projectId)}>
-                        Approve Ledger
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           {/* 4. AUDIT CORRECTIONS */}
           {attSubTab === 'corrections' && (
@@ -1202,29 +1234,48 @@ export default function LabourPage() {
       {/* WAGES TAB */}
       {activeTab === 'wages' && (
         <div className="labour-content">
-          <div className="wage-period-tabs">
-            <button className={`w-tab ${payPeriod === 'week' ? 'act' : ''}`} onClick={() => setPayPeriod('week')}>This week</button>
-            <button className={`w-tab ${payPeriod === 'month' ? 'act' : ''}`} onClick={() => setPayPeriod('month')}>This month</button>
+          <div className="wage-period-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button className={`w-tab ${payPeriod === 'day' ? 'act' : ''}`} onClick={() => setPayPeriod('day')}>Daily / Custom Date</button>
+              <button className={`w-tab ${payPeriod === 'week' ? 'act' : ''}`} onClick={() => setPayPeriod('week')}>This week</button>
+              <button className={`w-tab ${payPeriod === 'month' ? 'act' : ''}`} onClick={() => setPayPeriod('month')}>This month</button>
+            </div>
+
+            {payPeriod === 'day' && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Date:</span>
+                <input 
+                  type="date" 
+                  value={dailyDate} 
+                  onChange={e => setDailyDate(e.target.value)} 
+                  className="att-input" 
+                  style={{ height: 32 }}
+                />
+              </div>
+            )}
           </div>
           <div className="wage-summary-card">
             <div>
-              <div className="ws-label">Total payroll</div>
+              <div className="ws-label">Total Payroll ({payPeriod.toUpperCase()})</div>
               <div className="ws-value">{formatCurrency(payData.totalPayroll)}</div>
-              <div className="ws-sub">{payData.totalWorkers} workers</div>
+              <div className="ws-sub">{payData.totalWorkers} workers logged</div>
             </div>
             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-              <div className="ws-status-pill">Unpaid</div>
+              <div className="ws-status-pill">Calculated</div>
               {payData.totalPayroll > 0 && (
                 <button
                   className="btn-pp"
-                  style={{ fontSize: 12, padding: '6px 14px' }}
+                  style={{ fontSize: 12, padding: '8px 16px', background: 'var(--accent-primary)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 600, cursor: 'pointer' }}
                   disabled={finalizing}
                   onClick={async () => {
                     try {
                       setFinalizing(true);
                       const now = new Date();
                       let startDate, endDate;
-                      if (payPeriod === 'week') {
+                      if (payPeriod === 'day') {
+                        startDate = dailyDate;
+                        endDate = dailyDate;
+                      } else if (payPeriod === 'week') {
                         const dayOfWeek = now.getDay();
                         const start = new Date(now);
                         start.setDate(now.getDate() - dayOfWeek);
@@ -1234,17 +1285,22 @@ export default function LabourPage() {
                         startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
                         endDate = now.toISOString().split('T')[0];
                       }
-                      await labourService.finalizePayroll({ startDate, endDate });
-                      toast.success('Payroll finalized! Expense recorded in Finance.');
+
+                      await labourService.runPayrollBatch({ 
+                        startDate, 
+                        endDate, 
+                        remarks: `Labour Payroll (${payPeriod.toUpperCase()}: ${startDate}${startDate !== endDate ? ' to ' + endDate : ''})`
+                      });
+                      toast.success('Payroll batch submitted to Finance for approval!');
                       loadPayroll();
                     } catch (err) {
-                      toast.error(err.response?.data?.message || 'Failed to finalize');
+                      toast.error(err.response?.data?.message || 'Failed to submit payroll batch');
                     } finally {
                       setFinalizing(false);
                     }
                   }}
                 >
-                  {finalizing ? 'Processing...' : 'Finalize & Record Expense'}
+                  {finalizing ? 'Submitting...' : '🚀 Run Payroll & Submit to Finance'}
                 </button>
               )}
             </div>

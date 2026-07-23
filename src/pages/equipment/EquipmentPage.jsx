@@ -41,6 +41,9 @@ export default function EquipmentPage() {
   const [newItem, setNewItem] = useState({ name: '', type: 'Excavator', serialNumber: '', ownership: 'OWNED', projectId: '', dailyRentalRate: '', hourlyRate: '', purchaseCost: '', assetLifeYears: '10', depreciationMethod: 'SLM', purchaseDate: '' });
   const [deployForm, setDeployForm] = useState({ projectId: '', startDate: '', dailyRate: '', notes: '' });
   const [fuelForm, setFuelForm] = useState({ fuelType: 'DIESEL', quantity: '', costPerUnit: '', operatorName: '', projectId: '', notes: '' });
+  const [fuelPurchases, setFuelPurchases] = useState([]);
+  const [showBuyFuelModal, setShowBuyFuelModal] = useState(false);
+  const [buyFuelForm, setBuyFuelForm] = useState({ date: new Date().toISOString().split('T')[0], vendorName: '', projectId: '', quantity: '', rate: '', notes: '' });
 
   const loadData = async () => {
     try {
@@ -64,6 +67,9 @@ export default function EquipmentPage() {
   const loadFuelLogs = async () => {
     try { const { data } = await equipmentService.getFuelLogs(); setFuelLogs(data.data || []); } catch (e) { console.error(e); }
   };
+  const loadFuelPurchases = async () => {
+    try { const { data } = await equipmentService.getFuelPurchases(); setFuelPurchases(data.data || []); } catch (e) { console.error(e); }
+  };
   const loadDepreciation = async () => {
     try { const { data } = await equipmentService.getDepreciation(); setDepReport(data.data || { assets: [], summary: {} }); } catch (e) { console.error(e); }
   };
@@ -72,6 +78,7 @@ export default function EquipmentPage() {
   useEffect(() => {
     if (activeTab === 'deployments') loadDeployments();
     if (activeTab === 'fuel') loadFuelLogs();
+    if (activeTab === 'fuel_container') loadFuelPurchases();
     if (activeTab === 'depreciation') loadDepreciation();
   }, [activeTab]);
 
@@ -99,6 +106,33 @@ export default function EquipmentPage() {
       loadData();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to update fuel log');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleBuyFuelSubmit = async (e) => {
+    e.preventDefault();
+    if (!buyFuelForm.vendorName || !buyFuelForm.quantity || !buyFuelForm.rate) {
+      toast.warning('Please enter Vendor Name, Quantity and Rate');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await equipmentService.purchaseFuel({
+        date: buyFuelForm.date,
+        vendorName: buyFuelForm.vendorName,
+        projectId: buyFuelForm.projectId || undefined,
+        quantity: parseFloat(buyFuelForm.quantity),
+        rate: parseFloat(buyFuelForm.rate),
+        notes: buyFuelForm.notes
+      });
+      toast.success('Fuel purchase logged. Pending bill created in Finance!');
+      setShowBuyFuelModal(false);
+      setBuyFuelForm({ date: new Date().toISOString().split('T')[0], vendorName: '', projectId: '', quantity: '', rate: '', notes: '' });
+      loadFuelPurchases();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to purchase fuel');
     } finally {
       setSubmitting(false);
     }
@@ -300,6 +334,7 @@ export default function EquipmentPage() {
     { id: 'register', label: 'Equipment Register' },
     { id: 'deployments', label: 'Deployments' },
     { id: 'fuel', label: 'Fuel Logs' },
+    { id: 'fuel_container', label: 'Fuel Container' },
     { id: 'depreciation', label: 'Depreciation' },
   ];
 
@@ -311,6 +346,7 @@ export default function EquipmentPage() {
         ))}
         <div style={{ flex: 1 }} />
         {activeTab === 'register' && <button className="btn-pp" onClick={() => setShowAddModal(true)}>+ Add Equipment</button>}
+        {activeTab === 'fuel_container' && <button className="btn-pp" onClick={() => setShowBuyFuelModal(true)}>⛽ Purchase Fuel</button>}
       </div>
 
       {/* ─── REGISTER TAB ─── */}
@@ -491,6 +527,63 @@ export default function EquipmentPage() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ─── FUEL CONTAINER TAB ─── */}
+      {activeTab === 'fuel_container' && (
+        <div className="labour-content">
+          <div className="erp-card" style={{ overflowX: 'auto' }}>
+            <div className="card-header">
+              <span className="card-title">Bulk Fuel Purchases (Fuel Container Log)</span>
+            </div>
+            <table className="erp-tbl">
+              <thead>
+                <tr>
+                  <th>Purchase Date</th>
+                  <th>Vendor / Station Name</th>
+                  <th>Allocated Project</th>
+                  <th>Quantity (L)</th>
+                  <th>Rate (₹/L)</th>
+                  <th>Total Cost</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fuelPurchases.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
+                      No bulk fuel container purchases recorded yet. Click <strong>"Purchase Fuel"</strong> to add.
+                    </td>
+                  </tr>
+                ) : (
+                  fuelPurchases.map(p => {
+                    const vendorName = p.metadata?.vendorName || '—';
+                    const projectName = p.metadata?.projectName || 'Central Yard';
+                    const qty = p.metadata?.quantity || 0;
+                    const rate = p.metadata?.rate || 0;
+                    return (
+                      <tr key={p.id}>
+                        <td>{fmtDate(p.date)}</td>
+                        <td style={{ fontWeight: 500 }}>{vendorName}</td>
+                        <td>{projectName}</td>
+                        <td>{qty} Liters</td>
+                        <td>{fmt(rate)}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--accent-secondary)' }}>{fmt(p.amount)}</td>
+                        <td>
+                          {p.status === 'PENDING' ? (
+                            <span className="badge" style={{ background: '#fef3c7', color: '#d97706', padding: '4px 8px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>⏳ Awaiting Payment</span>
+                          ) : (
+                            <span className="badge" style={{ background: '#d1fae5', color: '#059669', padding: '4px 8px', borderRadius: 4, fontWeight: 600, fontSize: 11 }}>✅ Paid & Posted</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -951,6 +1044,104 @@ export default function EquipmentPage() {
         confirmText="Delete Log"
         disabled={isDeletingFuel}
       />
+
+      {/* ─── PURCHASE BULK FUEL MODAL ─── */}
+      {showBuyFuelModal && (
+        <div className="modal-overlay" onClick={() => setShowBuyFuelModal(false)}>
+          <div className="erp-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-head">
+              <span className="modal-title">⛽ Purchase Bulk Fuel</span>
+              <span className="modal-close" onClick={() => setShowBuyFuelModal(false)}>×</span>
+            </div>
+            <form onSubmit={handleBuyFuelSubmit}>
+              <div className="modal-body">
+                <div className="fld">
+                  <label className="fld-lbl">Purchase Date *</label>
+                  <input 
+                    className="fld-inp" 
+                    type="date" 
+                    required 
+                    value={buyFuelForm.date} 
+                    onChange={e => setBuyFuelForm(p => ({ ...p, date: e.target.value }))} 
+                  />
+                </div>
+                <div className="fld">
+                  <label className="fld-lbl">Vendor / Station Name *</label>
+                  <input 
+                    className="fld-inp" 
+                    placeholder="e.g. Shell Petrol Pump, HP, Indian Oil" 
+                    required 
+                    value={buyFuelForm.vendorName} 
+                    onChange={e => setBuyFuelForm(p => ({ ...p, vendorName: e.target.value }))} 
+                  />
+                </div>
+                <div className="fld">
+                  <label className="fld-lbl">Allocated Project (Optional)</label>
+                  <select 
+                    className="fld-sel" 
+                    value={buyFuelForm.projectId} 
+                    onChange={e => setBuyFuelForm(p => ({ ...p, projectId: e.target.value }))}
+                  >
+                    <option value="">Central Yard (Default)</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-2col">
+                  <div className="fld">
+                    <label className="fld-lbl">Quantity (Liters) *</label>
+                    <input 
+                      className="fld-inp" 
+                      type="number" 
+                      step="0.01" 
+                      required 
+                      placeholder="e.g. 500" 
+                      value={buyFuelForm.quantity} 
+                      onChange={e => setBuyFuelForm(p => ({ ...p, quantity: e.target.value }))} 
+                    />
+                  </div>
+                  <div className="fld">
+                    <label className="fld-lbl">Rate per Liter (₹/L) *</label>
+                    <input 
+                      className="fld-inp" 
+                      type="number" 
+                      step="0.01" 
+                      required 
+                      placeholder="e.g. 96.5" 
+                      value={buyFuelForm.rate} 
+                      onChange={e => setBuyFuelForm(p => ({ ...p, rate: e.target.value }))} 
+                    />
+                  </div>
+                </div>
+
+                {buyFuelForm.quantity && buyFuelForm.rate && (
+                  <div style={{ padding: '10px 14px', background: 'var(--surface-secondary)', borderRadius: 8, fontWeight: 700, fontSize: 15, color: 'var(--accent-secondary)', display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+                    <span>Estimated Total Cost:</span>
+                    <span>{fmt(parseFloat(buyFuelForm.quantity) * parseFloat(buyFuelForm.rate))}</span>
+                  </div>
+                )}
+
+                <div className="fld" style={{ marginTop: 12 }}>
+                  <label className="fld-lbl">Remarks / Notes</label>
+                  <textarea 
+                    className="fld-inp" 
+                    placeholder="Any specific delivery instructions or invoice notes..." 
+                    rows={2}
+                    value={buyFuelForm.notes} 
+                    onChange={e => setBuyFuelForm(p => ({ ...p, notes: e.target.value }))} 
+                    style={{ resize: 'vertical', fontFamily: 'inherit', padding: '8px' }}
+                  />
+                </div>
+              </div>
+              <div className="modal-foot">
+                <button type="button" className="btn-gp" onClick={() => setShowBuyFuelModal(false)}>Cancel</button>
+                <button type="submit" className="btn-pp" disabled={submitting}>
+                  {submitting ? 'Creating Bill...' : '⛽ Log & Generate Bill'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
