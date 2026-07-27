@@ -373,4 +373,19 @@ export const aiService = {
   getSessionById: (id) => api.get(`/ai/sessions/${id}`),
   chat: (data) => api.post('/ai/chat', data),
   deleteSession: (id) => api.delete(`/ai/sessions/${id}`),
+
+  getLandPlots: () => api.get('/ai/land-plots'),
+  analyzeLandPlot: (data) => api.post('/ai/land-analysis', data),
+
+  getJVAgreements: () => api.get('/ai/jv-agreements'),
+  analyzeJVAgreement: (data) => api.post('/ai/jv-analysis', data),
+
+  getFeasibilityStudies: () => api.get('/ai/feasibility-studies'),
+  calculateFeasibility: (data) => api.post('/ai/feasibility', data),
+
+  getApprovalTasks: () => api.get('/ai/approval-tasks'),
+  predictApprovalDelay: (data) => api.post('/ai/approval-delay', data),
+
+  getPropertyPlans: () => api.get('/ai/property-plans'),
+  generatePropertyPlan: (data) => api.post('/ai/property-planning', data),
 };

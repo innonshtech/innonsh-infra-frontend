@@ -31,6 +31,12 @@ import ReportsHub from './pages/reports/ReportsHub';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import ContractsPage from './pages/contracts/ContractsPage';
 import AiBoardPage from './pages/ai/AiBoardPage';
+import LandPlotPage from './pages/ai/LandPlotPage';
+import JVAgreementPage from './pages/ai/JVAgreementPage';
+import FeasibilityPage from './pages/ai/FeasibilityPage';
+import ApprovalPage from './pages/ai/ApprovalPage';
+import PropertyPlanningPage from './pages/ai/PropertyPlanningPage';
+
 
 // Basic wrapper for protected routes
 const ProtectedRoute = () => {
@@ -83,6 +89,11 @@ function AppRoutes() {
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/ai-board" element={<AiBoardPage />} />
+            <Route path="/ai/land" element={<LandPlotPage />} />
+            <Route path="/ai/jv" element={<JVAgreementPage />} />
+            <Route path="/ai/feasibility" element={<FeasibilityPage />} />
+            <Route path="/ai/approvals" element={<ApprovalPage />} />
+            <Route path="/ai/property-planning" element={<PropertyPlanningPage />} />
             <Route path="/projects" element={<ProjectListPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
             <Route path="/my-tasks" element={<MyTasksPage />} />

@@ -6,43 +6,109 @@ import {
   Package, IndianRupee, Building2, Grid3X3, BookOpen,
   FileText, Users, Users2, Scale, ClipboardList, BarChart3,
   Settings, ChevronLeft, ChevronRight, HardHat, LogOut, Wrench, Bell, Sparkles,
+  Map as MapIcon, Handshake, FileCheck, FilePieChart
 } from 'lucide-react';
 import { useState } from 'react';
 import './Sidebar.css';
 import ConfirmModal from '../ui/ConfirmModal';
 
 const contractorMenu = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
-  { label: 'Projects', icon: FolderKanban, path: '/projects' },
-  { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
-  { label: 'Estimation & BOQ', icon: Calculator, path: '/estimation' },
-  { label: 'Procurement', icon: ShoppingCart, path: '/procurement' },
-  { label: 'Inventory', icon: Package, path: '/inventory' },
-  { label: 'Labour', icon: Users2, path: '/labour' },
-  { label: 'Equipment', icon: Wrench, path: '/equipment' },
-  { label: 'Finance', icon: IndianRupee, path: '/finance' },
-  { label: 'Contracts', icon: FileText, path: '/contracts' },
-  { label: 'Reports', icon: BarChart3, path: '/reports' },
-  { label: 'Organization', icon: Building2, path: '/settings' },
+  {
+    title: 'Core System',
+    links: [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
+    ]
+  },
+  {
+    title: 'AI Planning Suite',
+    links: [
+      { label: 'AI Land Bank', icon: MapIcon, path: '/ai/land' },
+      { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
+      { label: 'AI Feasibility', icon: FilePieChart, path: '/ai/feasibility' },
+      { label: 'AI Approvals', icon: FileCheck, path: '/ai/approvals' },
+      { label: 'AI Property Planner', icon: LayoutDashboard, path: '/ai/property-planning' },
+    ]
+  },
+  {
+    title: 'Project Execution',
+    links: [
+      { label: 'Projects', icon: FolderKanban, path: '/projects' },
+      { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
+    ]
+  },
+  {
+    title: 'Resources & ERP',
+    links: [
+      { label: 'Estimation & BOQ', icon: Calculator, path: '/estimation' },
+      { label: 'Procurement', icon: ShoppingCart, path: '/procurement' },
+      { label: 'Inventory', icon: Package, path: '/inventory' },
+      { label: 'Labour', icon: Users2, path: '/labour' },
+      { label: 'Equipment', icon: Wrench, path: '/equipment' },
+      { label: 'Finance', icon: IndianRupee, path: '/finance' },
+      { label: 'Contracts', icon: FileText, path: '/contracts' },
+      { label: 'Reports', icon: BarChart3, path: '/reports' },
+    ]
+  },
+  {
+    title: 'Preferences',
+    links: [
+      { label: 'Organization', icon: Building2, path: '/settings' },
+    ]
+  }
 ];
 
 const builderMenu = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
-  { label: 'Projects', icon: FolderKanban, path: '/projects' },
-  { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
-  { label: 'Units', icon: Grid3X3, path: '/units' },
-  { label: 'Bookings', icon: BookOpen, path: '/bookings' },
-  { label: 'Billing', icon: FileText, path: '/billing' },
-  { label: 'CRM / Brokers', icon: Users, path: '/crm' },
-  { label: 'Lease Mgmt', icon: Building2, path: '/lease' },
-  { label: 'Legal', icon: Scale, path: '/legal' },
-  { label: 'Procurement', icon: ShoppingCart, path: '/procurement' },
-  { label: 'Inventory', icon: Package, path: '/inventory' },
-  { label: 'Finance', icon: IndianRupee, path: '/finance' },
-  { label: 'Reports', icon: BarChart3, path: '/reports' },
-  { label: 'Organization', icon: Building2, path: '/settings' },
+  {
+    title: 'Core System',
+    links: [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
+    ]
+  },
+  {
+    title: 'AI Planning Suite',
+    links: [
+      { label: 'AI Land Bank', icon: MapIcon, path: '/ai/land' },
+      { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
+      { label: 'AI Feasibility', icon: FilePieChart, path: '/ai/feasibility' },
+      { label: 'AI Approvals', icon: FileCheck, path: '/ai/approvals' },
+      { label: 'AI Property Planner', icon: LayoutDashboard, path: '/ai/property-planning' },
+    ]
+  },
+  {
+    title: 'Project Execution',
+    links: [
+      { label: 'Projects', icon: FolderKanban, path: '/projects' },
+      { label: 'My Tasks', icon: ClipboardList, path: '/my-tasks' },
+    ]
+  },
+  {
+    title: 'Sales & Inventory',
+    links: [
+      { label: 'Units', icon: Grid3X3, path: '/units' },
+      { label: 'Bookings', icon: BookOpen, path: '/bookings' },
+      { label: 'Billing', icon: FileText, path: '/billing' },
+      { label: 'CRM / Brokers', icon: Users, path: '/crm' },
+      { label: 'Lease Mgmt', icon: Building2, path: '/lease' },
+      { label: 'Legal', icon: Scale, path: '/legal' },
+    ]
+  },
+  {
+    title: 'Resources & ERP',
+    links: [
+      { label: 'Procurement', icon: ShoppingCart, path: '/procurement' },
+      { label: 'Inventory', icon: Package, path: '/inventory' },
+      { label: 'Finance', icon: IndianRupee, path: '/finance' },
+      { label: 'Reports', icon: BarChart3, path: '/reports' },
+    ]
+  },
+  {
+    title: 'Preferences',
+    links: [
+      { label: 'Organization', icon: Building2, path: '/settings' },
+    ]
+  }
 ];
 
 const permissionMapping = {
@@ -50,6 +116,26 @@ const permissionMapping = {
     return user?.permissions?.includes('*') || 
            user?.role?.toUpperCase() === 'OWNER' ||
            user?.permissions?.includes('aiBoard.view');
+  },
+  '/ai/land': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.includes('ai.land.view');
+  },
+  '/ai/jv': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.includes('ai.jv.view');
+  },
+  '/ai/feasibility': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.includes('ai.feasibility.view');
+  },
+  '/ai/approvals': (user) => {
+    return user?.permissions?.includes('*') || 
+           user?.role?.toUpperCase() === 'OWNER' ||
+           user?.permissions?.includes('ai.approvals.view');
   },
   '/dashboard': (user) => {
     const role = user?.role?.toUpperCase();
@@ -140,16 +226,19 @@ export default function Sidebar() {
     toast.success('Logged out successfully!');
   };
 
-  const menu = erpType === 'BUILDER' ? builderMenu : contractorMenu;
+  const categories = erpType === 'BUILDER' ? builderMenu : contractorMenu;
   
   // Filter sidebar tabs dynamically based on user role and permissions!
-  const filteredMenu = menu.filter(item => {
-    const checker = permissionMapping[item.path];
-    if (checker) {
-      return checker(user);
-    }
-    return true;
-  });
+  const filteredCategories = categories.map(cat => {
+    const filteredLinks = cat.links.filter(item => {
+      const checker = permissionMapping[item.path];
+      if (checker) {
+        return checker(user);
+      }
+      return true;
+    });
+    return { ...cat, links: filteredLinks };
+  }).filter(cat => cat.links.length > 0);
 
   const initials = user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}` : 'U';
   const logoUrl = company?.logo || user?.company?.logo;
@@ -183,22 +272,31 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="sidebar-nav">
-        {filteredMenu.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? 'active' : ''}`
-            }
-            title={collapsed ? item.label : undefined}
-          >
-            <item.icon size={20} />
-            {!collapsed && <span>{item.label}</span>}
-            {location.pathname === item.path && (
-              <div className="sidebar-active-indicator" />
+      <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {filteredCategories.map((category) => (
+          <div key={category.title} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {!collapsed && (
+              <span className="sidebar-category-header">
+                {category.title}
+              </span>
             )}
-          </NavLink>
+            {category.links.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `sidebar-link ${isActive ? 'active' : ''}`
+                }
+                title={collapsed ? item.label : undefined}
+              >
+                <item.icon size={20} />
+                {!collapsed && <span>{item.label}</span>}
+                {location.pathname === item.path && (
+                  <div className="sidebar-active-indicator" />
+                )}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 

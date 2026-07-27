@@ -7,11 +7,13 @@ import {
   Sparkles, Send, Plus, Trash2, Bot, User, 
   MessageSquare, Loader2, ArrowRight, HelpCircle, FileText, Clipboard, Menu, X
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import './AiBoard.css';
 
 export default function AiBoardPage() {
   const { user } = useAuth();
   const toast = useToast();
+  const location = useLocation();
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -23,10 +25,15 @@ export default function AiBoardPage() {
 
   const messagesEndRef = useRef(null);
 
-  // Load chat sessions on mount
+  // Load chat sessions on mount or when routing state changes
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    const routeSessionId = location.state?.openSessionId;
+    if (routeSessionId) {
+      fetchSessions(routeSessionId);
+    } else {
+      fetchSessions();
+    }
+  }, [location.state?.openSessionId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -177,14 +184,17 @@ export default function AiBoardPage() {
     // Handle inline code (single backticks)
     formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
+    // Handle markdown headers (# Heading, ## Heading, etc.)
+    formatted = formatted.replace(/^\s*#{1,6}\s+(.+)$/gm, '<h4 style="font-weight: 700; color: #1e293b; margin-top: 12px; margin-bottom: 6px;">$1</h4>');
+
     // Handle bold (**text**)
     formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-    // Handle bullet lists
-    formatted = formatted.replace(/^\s*-\s+(.+)$/gm, '<li>$1</li>');
-    formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    // Handle bullet lists (bullet starting with - or *)
+    formatted = formatted.replace(/^\s*[-*]\s+(.+)$/gm, '<li style="margin-left: 16px; list-style-type: disc; margin-top: 4px; margin-bottom: 4px;">$1</li>');
+    formatted = formatted.replace(/(<li style="[^"]*">.*<\/li>)/s, '<ul>$1</ul>');
 
-    // Convert newlines to breaks, avoiding doubles inside list tags
+    // Convert newlines to breaks
     return formatted.replace(/\n/g, '<br />');
   };
 
