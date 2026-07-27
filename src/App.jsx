@@ -36,6 +36,7 @@ import JVAgreementPage from './pages/ai/JVAgreementPage';
 import FeasibilityPage from './pages/ai/FeasibilityPage';
 import ApprovalPage from './pages/ai/ApprovalPage';
 import PropertyPlanningPage from './pages/ai/PropertyPlanningPage';
+import DocumentVaultPage from './pages/ai/DocumentVaultPage';
 
 
 // Basic wrapper for protected routes
@@ -94,6 +95,7 @@ function AppRoutes() {
             <Route path="/ai/feasibility" element={<FeasibilityPage />} />
             <Route path="/ai/approvals" element={<ApprovalPage />} />
             <Route path="/ai/property-planning" element={<PropertyPlanningPage />} />
+            <Route path="/documents" element={<DocumentVaultPage />} />
             <Route path="/projects" element={<ProjectListPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
             <Route path="/my-tasks" element={<MyTasksPage />} />

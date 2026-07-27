@@ -18,6 +18,7 @@ const contractorMenu = [
     links: [
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
       { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
+      { label: 'Document Vault', icon: FileText, path: '/documents' },
     ]
   },
   {
@@ -64,6 +65,7 @@ const builderMenu = [
     links: [
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
       { label: 'AI Board', icon: Sparkles, path: '/ai-board' },
+      { label: 'Document Vault', icon: FileText, path: '/documents' },
     ]
   },
   {
