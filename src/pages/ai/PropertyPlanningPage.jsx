@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { LayoutDashboard, Plus, Sparkles, Info, ChevronRight, MessageSquare, Loader2, Download, Building, DollarSign, Ruler, Compass } from 'lucide-react';
+import { LayoutDashboard, Plus, Sparkles, Info, ChevronRight, MessageSquare, Loader2, Download, Building, DollarSign, Ruler, Compass, Layers, CheckSquare } from 'lucide-react';
 import './AiModules.css';
 
 function formatMarkdown(text) {
@@ -56,6 +56,13 @@ export default function PropertyPlanningPage() {
   const [fsi, setFsi] = useState('');
   const [budget, setBudget] = useState('');
   const [targetCustomer, setTargetCustomer] = useState('Mid-Tier Residential');
+  
+  // Setbacks & Floors input parameters
+  const [frontSetback, setFrontSetback] = useState('6');
+  const [rearSetback, setRearSetback] = useState('3');
+  const [sideSetbacks, setSideSetbacks] = useState('3');
+  const [requestedFloors, setRequestedFloors] = useState('1');
+  const [isRevision, setIsRevision] = useState(false);
 
   useEffect(() => {
     fetchPlans();
@@ -85,18 +92,35 @@ export default function PropertyPlanningPage() {
 
     setSubmitting(true);
     try {
+      // Calculate next version number if revision is checked
+      let calculatedVersion = 'V1';
+      let calculatedParentId = null;
+      if (isRevision && selectedPlan) {
+        calculatedParentId = selectedPlan.parentPlanId || selectedPlan.id;
+        const relatedVersionsCount = plans.filter(
+          p => p.parentPlanId === calculatedParentId || p.id === calculatedParentId
+        ).length;
+        calculatedVersion = `V${relatedVersionsCount + 1}`;
+      }
+
       const payload = {
         projectName,
         plotSize: Number(plotSize),
         roadWidth: Number(roadWidth),
         fsi: Number(fsi),
         budget: Number(budget),
-        targetCustomer
+        targetCustomer,
+        frontSetback: Number(frontSetback),
+        rearSetback: Number(rearSetback),
+        sideSetbacks: Number(sideSetbacks),
+        requestedFloors: Number(requestedFloors),
+        version: calculatedVersion,
+        parentPlanId: calculatedParentId
       };
 
-      toast.info('Synthesizing layouts, unit mixes, and vector geometries with Gemini...');
+      toast.info(`Generating ${calculatedVersion} layout blueprint with local zoning calculations...`);
       const { data } = await aiService.generatePropertyPlan(payload);
-      toast.success('AI property plan and vector blueprint generated successfully!');
+      toast.success(`Plan ${calculatedVersion} compiled and saved successfully!`);
 
       // Reset form
       setProjectName('');
@@ -105,6 +129,11 @@ export default function PropertyPlanningPage() {
       setFsi('');
       setBudget('');
       setTargetCustomer('Mid-Tier Residential');
+      setFrontSetback('6');
+      setRearSetback('3');
+      setSideSetbacks('3');
+      setRequestedFloors('1');
+      setIsRevision(false);
 
       // Refresh list
       const updatedPlans = [data.data, ...plans];
@@ -123,33 +152,28 @@ export default function PropertyPlanningPage() {
     setChatStarting(true);
     try {
       const prompt = `Here is the AI Property Planning details:
-- **Project Name**: ${selectedPlan.projectName}
+- **Project Name**: ${selectedPlan.projectName} (${selectedPlan.version})
 - **Plot Size**: ${selectedPlan.plotSize} sq. ft.
 - **Road Width**: ${selectedPlan.roadWidth} meters
 - **FSI (Floor Space Index)**: ${selectedPlan.fsi}
 - **Budget**: INR ${selectedPlan.budget.toLocaleString()}
 - **Target Customer**: ${selectedPlan.targetCustomer}
-- **Calculated Saleable Area**: ${selectedPlan.saleableArea?.toLocaleString() || 'N/A'} sq. ft.
+- **Zoning Setbacks**: Front: ${selectedPlan.frontSetback || 6}m, Rear: ${selectedPlan.rearSetback || 3}m, Sides: ${selectedPlan.sideSetbacks || 3}m
+- **Requested Floors**: ${selectedPlan.requestedFloors || 1}
+
+AI Calculated Metrics:
+- **Optimal Floors**: ${selectedPlan.floors || 1}
+- **Total Units**: ${selectedPlan.totalUnits || 0} Flats
+- **Built-Up Area**: ${selectedPlan.builtUpArea?.toLocaleString() || 'N/A'} sq. ft.
+- **FSI Utilized**: ${selectedPlan.fsiUsed || 'N/A'}
+- **Ground Coverage**: ${selectedPlan.coverage || 'N/A'}%
+- **Parking Slots**: ${selectedPlan.parkingSpaces || 0} slots
 
 Optimal Unit Mix:
 ${selectedPlan.unitMix || 'N/A'}
 
 Parking Layout:
 ${selectedPlan.parkingLayout || 'N/A'}
-
-Amenities & Club House:
-${selectedPlan.clubHouse || 'N/A'}
-${selectedPlan.amenities || 'N/A'}
-
-Landscaping & Commercial:
-${selectedPlan.landscape || 'N/A'}
-${selectedPlan.commercialSpace || 'N/A'}
-
-Elevation Concepts & Facade:
-${selectedPlan.elevationConcept || 'N/A'}
-
-Cost Estimates:
-${selectedPlan.costEstimates || 'N/A'}
 
 Please advise me on the architectural design revisions, spatial configurations, or construction scheduling for this layout.`;
 
@@ -181,7 +205,7 @@ Please advise me on the architectural design revisions, spatial configurations, 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${selectedPlan.projectName.toLowerCase().replace(/\s+/g, '_')}_layout.dxf`;
+      link.download = `${selectedPlan.projectName.toLowerCase().replace(/\s+/g, '_')}_layout_${selectedPlan.version.toLowerCase()}.dxf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -201,7 +225,7 @@ Please advise me on the architectural design revisions, spatial configurations, 
           AI Property Planning & Layouts
         </h1>
         <p className="ai-subtitle">
-          Input your plot details, roads, and FSI. Gemini compiles optimal unit mixes, parking space calculations, raw cost estimates, and exports standard CAD DXF vector blueprints.
+          Input your plot details, road width, local setbacks, and target floors. Gemini AI computes coverage limits, built-up area, FSI utilization, unit count, and compiles downloadable CAD DXF blueprints.
         </p>
       </div>
 
@@ -211,18 +235,18 @@ Please advise me on the architectural design revisions, spatial configurations, 
           <div className="ai-card-header">
             <h2 className="ai-card-title">
               <Plus size={18} />
-              Setup New Property Plan Parameters
+              Setup Property Plan & Layout Parameters
             </h2>
           </div>
           <div className="ai-card-body" style={{ marginTop: '1rem' }}>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-2 gap-md mb-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
+              <div className="grid grid-3 gap-md mb-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
                 <div className="ai-form-group">
                   <label className="ai-label">Project Name</label>
                   <input
                     type="text"
                     className="ai-input"
-                    placeholder="e.g. Oakridge Heights Complex"
+                    placeholder="e.g. Sunshine Residency"
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
                   />
@@ -241,40 +265,6 @@ Please advise me on the architectural design revisions, spatial configurations, 
                     <option value="Mixed-Use Building">Mixed-Use (Retail Ground + Residential Upper)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-4 gap-md mb-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-                <div className="ai-form-group">
-                  <label className="ai-label">Plot Size (Sq. Ft.)</label>
-                  <input
-                    type="number"
-                    className="ai-input"
-                    placeholder="e.g. 40000"
-                    value={plotSize}
-                    onChange={(e) => setPlotSize(e.target.value)}
-                  />
-                </div>
-                <div className="ai-form-group">
-                  <label className="ai-label">Road Width (Meters)</label>
-                  <input
-                    type="number"
-                    className="ai-input"
-                    placeholder="e.g. 12"
-                    value={roadWidth}
-                    onChange={(e) => setRoadWidth(e.target.value)}
-                  />
-                </div>
-                <div className="ai-form-group">
-                  <label className="ai-label">Permitted FSI (Multiplier)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="ai-input"
-                    placeholder="e.g. 3.0"
-                    value={fsi}
-                    onChange={(e) => setFsi(e.target.value)}
-                  />
-                </div>
                 <div className="ai-form-group">
                   <label className="ai-label">Construction Budget (INR)</label>
                   <input
@@ -287,6 +277,98 @@ Please advise me on the architectural design revisions, spatial configurations, 
                 </div>
               </div>
 
+              <div className="grid grid-4 gap-md mb-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                <div className="ai-form-group">
+                  <label className="ai-label">Plot Size (Sq. Ft.)</label>
+                  <input
+                    type="number"
+                    className="ai-input"
+                    placeholder="e.g. 10000"
+                    value={plotSize}
+                    onChange={(e) => setPlotSize(e.target.value)}
+                  />
+                </div>
+                <div className="ai-form-group">
+                  <label className="ai-label">Road Width (Meters)</label>
+                  <input
+                    type="number"
+                    className="ai-input"
+                    placeholder="e.g. 18"
+                    value={roadWidth}
+                    onChange={(e) => setRoadWidth(e.target.value)}
+                  />
+                </div>
+                <div className="ai-form-group">
+                  <label className="ai-label">Permitted FSI (Multiplier)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="ai-input"
+                    placeholder="e.g. 2.5"
+                    value={fsi}
+                    onChange={(e) => setFsi(e.target.value)}
+                  />
+                </div>
+                <div className="ai-form-group">
+                  <label className="ai-label">Requested Target Floors</label>
+                  <input
+                    type="number"
+                    className="ai-input"
+                    placeholder="e.g. 10"
+                    value={requestedFloors}
+                    onChange={(e) => setRequestedFloors(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-3 gap-md mb-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <div className="ai-form-group">
+                  <label className="ai-label">Front Setback (Meters)</label>
+                  <input
+                    type="number"
+                    className="ai-input"
+                    placeholder="e.g. 6"
+                    value={frontSetback}
+                    onChange={(e) => setFrontSetback(e.target.value)}
+                  />
+                </div>
+                <div className="ai-form-group">
+                  <label className="ai-label">Rear Setback (Meters)</label>
+                  <input
+                    type="number"
+                    className="ai-input"
+                    placeholder="e.g. 3"
+                    value={rearSetback}
+                    onChange={(e) => setRearSetback(e.target.value)}
+                  />
+                </div>
+                <div className="ai-form-group">
+                  <label className="ai-label">Left/Right Side Setbacks (Meters)</label>
+                  <input
+                    type="number"
+                    className="ai-input"
+                    placeholder="e.g. 3"
+                    value={sideSetbacks}
+                    onChange={(e) => setSideSetbacks(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {selectedPlan && (
+                <div className="flex items-center gap-2 mb-md" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="isRevision"
+                    className="w-4 h-4 rounded text-primary border-slate-300"
+                    checked={isRevision}
+                    onChange={(e) => setIsRevision(e.target.checked)}
+                  />
+                  <label htmlFor="isRevision" className="text-xs text-slate-600 font-medium select-none cursor-pointer">
+                    Generate this layout as a revision of <strong>{selectedPlan.projectName} ({selectedPlan.version})</strong>
+                  </label>
+                </div>
+              )}
+
               <button
                 type="submit"
                 className="btn btn-primary btn-lg w-full flex justify-center items-center gap-2 mt-2"
@@ -294,11 +376,11 @@ Please advise me on the architectural design revisions, spatial configurations, 
               >
                 {submitting ? (
                   <>
-                    <div className="spinner" /> Generating floor plan vectors and structural configurations...
+                    <div className="spinner" /> Synthesizing setbacks limits and AutoCAD coordinate layers...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={18} /> Compile Property Plan Layouts
+                    <Sparkles size={18} /> Generate AI Layout
                   </>
                 )}
               </button>
@@ -311,7 +393,7 @@ Please advise me on the architectural design revisions, spatial configurations, 
           <div className="ai-card-header">
             <h2 className="ai-card-title">
               <LayoutDashboard size={18} />
-              Calculated Real Estate Plans
+              Calculated Real Estate Plans & Design Options
             </h2>
           </div>
           <div className="ai-card-body p-0" style={{ marginTop: '1rem' }}>
@@ -325,11 +407,13 @@ Please advise me on the architectural design revisions, spatial configurations, 
                   <thead>
                     <tr>
                       <th>Project Proposal</th>
+                      <th>Version</th>
                       <th>Plot Area</th>
-                      <th>FSI Limit</th>
-                      <th>Target Customer</th>
+                      <th>FSI Utilized</th>
+                      <th>Total Floors</th>
+                      <th>Total Units</th>
                       <th>Saleable Area</th>
-                      <th>Budget</th>
+                      <th>Status</th>
                       <th style={{ width: '40px' }}></th>
                     </tr>
                   </thead>
@@ -342,11 +426,21 @@ Please advise me on the architectural design revisions, spatial configurations, 
                         style={{ cursor: 'pointer' }}
                       >
                         <td>{p.projectName}</td>
+                        <td>
+                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">
+                            {p.version}
+                          </span>
+                        </td>
                         <td>{p.plotSize.toLocaleString()} sqft</td>
-                        <td>{p.fsi}</td>
-                        <td>{p.targetCustomer}</td>
+                        <td>{p.fsiUsed || 'N/A'} / {p.fsi}</td>
+                        <td>{p.floors || 1}</td>
+                        <td><strong>{p.totalUnits || 0} units</strong></td>
                         <td><strong>{p.saleableArea?.toLocaleString() || 'N/A'} sqft</strong></td>
-                        <td>₹{(p.budget / 10000000).toFixed(2)} Cr</td>
+                        <td>
+                          <span className="bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold">
+                            {p.status}
+                          </span>
+                        </td>
                         <td><ChevronRight size={16} className="text-slate-400" /></td>
                       </tr>
                     ))}
@@ -371,12 +465,12 @@ Please advise me on the architectural design revisions, spatial configurations, 
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-4" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div className="ai-score-container mb-0" style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: 0, borderBottom: 'none', paddingBottom: 0 }}>
                   <div className="ai-score-circle" style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)' }}>
-                    PLN
+                    {selectedPlan.version}
                   </div>
                   <div className="ai-score-details">
-                    <span className="ai-score-label">{selectedPlan.projectName}</span>
-                    <span className="ai-score-status" style={{ fontSize: '12px', fontWeight: 'bold' }}>
-                      Calculated Saleable Area: {selectedPlan.saleableArea?.toLocaleString() || 'N/A'} Sq. Ft.
+                    <span className="ai-score-label">{selectedPlan.projectName} ({selectedPlan.version})</span>
+                    <span className="ai-score-status" style={{ fontSize: '11px', color: '#64748b' }}>
+                      Setbacks: Front {selectedPlan.frontSetback || 6}m | Rear {selectedPlan.rearSetback || 3}m | Sides {selectedPlan.sideSetbacks || 3}m
                     </span>
                   </div>
                 </div>
@@ -387,10 +481,10 @@ Please advise me on the architectural design revisions, spatial configurations, 
                     onClick={handleDownloadDxf}
                     className="btn btn-primary btn-sm flex items-center gap-1.5 cursor-pointer shadow-sm"
                     style={{ fontSize: '11px', padding: '6px 12px', height: 'fit-content' }}
-                    title="Download vector DXF drawing layer for AutoCAD/Revit"
+                    title="Export vector DXF drawing layer to AutoCAD"
                   >
                     <Download size={14} />
-                    Download CAD DXF
+                    Export to AutoCAD (DXF)
                   </button>
 
                   {/* Chat Integration Button! */}
@@ -399,7 +493,7 @@ Please advise me on the architectural design revisions, spatial configurations, 
                     disabled={chatStarting}
                     className="btn btn-secondary btn-sm flex items-center gap-1.5 cursor-pointer shadow-sm"
                     style={{ fontSize: '11px', padding: '6px 12px', height: 'fit-content' }}
-                    title="Open in AI Board to ask layout feedback"
+                    title="Ask AI to refine this drawing version"
                   >
                     {chatStarting ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -411,8 +505,36 @@ Please advise me on the architectural design revisions, spatial configurations, 
                 </div>
               </div>
 
+              {/* Core Metrics Grid */}
+              <div className="grid grid-6 gap-md mb-lg border border-slate-100 bg-slate-50/50 p-4 rounded-xl" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <div className="text-center">
+                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Total Floors</span>
+                  <strong className="text-lg text-slate-700 font-bold">{selectedPlan.floors || 1} Floors</strong>
+                </div>
+                <div className="text-center border-l border-slate-100">
+                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Total Units</span>
+                  <strong className="text-lg text-slate-700 font-bold">{selectedPlan.totalUnits || 0} Flats</strong>
+                </div>
+                <div className="text-center border-l border-slate-100">
+                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Parking Slots</span>
+                  <strong className="text-lg text-slate-700 font-bold">{selectedPlan.parkingSpaces || 0} Spaces</strong>
+                </div>
+                <div className="text-center border-l border-slate-100">
+                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Built-Up Area</span>
+                  <strong className="text-lg text-slate-700 font-bold">{(selectedPlan.builtUpArea || 0).toLocaleString()} sqft</strong>
+                </div>
+                <div className="text-center border-l border-slate-100">
+                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">FSI Utilized</span>
+                  <strong className="text-lg text-slate-700 font-bold">{selectedPlan.fsiUsed || 0} / {selectedPlan.fsi}</strong>
+                </div>
+                <div className="text-center border-l border-slate-100">
+                  <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Ground Coverage</span>
+                  <strong className="text-lg text-slate-700 font-bold">{selectedPlan.coverage || 0}%</strong>
+                </div>
+              </div>
+
               {/* Scrollable Content Body with Side-by-Side split */}
-              <div style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '12px', marginRight: '-6px' }}>
+              <div style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '12px', marginRight: '-6px' }}>
                 <div className="grid grid-2 gap-lg" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
                   
                   {/* Left Column: Spatial Metrics Reports */}
