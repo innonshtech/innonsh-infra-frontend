@@ -388,4 +388,6 @@ export const aiService = {
 
   getPropertyPlans: () => api.get('/ai/property-plans'),
   generatePropertyPlan: (data) => api.post('/ai/property-planning', data),
+
+  getDocumentCatalog: () => api.get('/ai/documents'),
 };
