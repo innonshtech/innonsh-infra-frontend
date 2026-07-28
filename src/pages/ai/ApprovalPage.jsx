@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { aiService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { FileCheck, Plus, Sparkles, Scale, Info, AlertTriangle, Calendar, ClipboardList, Upload, MessageSquare, Loader2 } from 'lucide-react';
+import { uploadFile } from '../../config/supabase';
 import './AiModules.css';
 
 function formatMarkdown(text) {
@@ -61,6 +62,7 @@ export default function ApprovalPage() {
   const [status, setStatus] = useState('APPLIED');
   const [submissionDate, setSubmissionDate] = useState('');
   const [objectionLetter, setObjectionLetter] = useState(null);
+  const [uploadingObjection, setUploadingObjection] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -81,19 +83,21 @@ export default function ApprovalPage() {
     }
   };
 
-  const handleFileConvert = (e, setFile) => {
+  const handleObjectionUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFile({
-        name: file.name,
-        base64: reader.result,
-        mimeType: file.type
-      });
-    };
-    reader.readAsDataURL(file);
+    setUploadingObjection(true);
+    try {
+      toast.info(`Uploading ${file.name} to cloud storage...`);
+      const url = await uploadFile(file, 'innonsh-assets');
+      setObjectionLetter({ name: file.name, url });
+      toast.success('Objection document uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to upload objection document.');
+    } finally {
+      setUploadingObjection(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -109,7 +113,7 @@ export default function ApprovalPage() {
         authorityName,
         status,
         submissionDate,
-        objectionLetter: objectionLetter ? { base64: objectionLetter.base64, mimeType: objectionLetter.mimeType } : undefined,
+        objectionLetter: objectionLetter ? { url: objectionLetter.url, mimeType: 'application/pdf' } : undefined,
       };
 
       toast.info('Analyzing approval timelines and checklists with Gemini AI...');
@@ -250,13 +254,14 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                   <label className={`ai-upload-zone ${objectionLetter ? 'ai-uploaded-file' : ''}`} style={{ padding: '0.85rem' }}>
                     <Upload className="ai-upload-icon" size={16} />
                     <span className="ai-upload-text" style={{ fontSize: '0.75rem' }}>
-                      {objectionLetter ? objectionLetter.name : 'Upload Query Document'}
+                      {uploadingObjection ? 'Uploading to Supabase...' : (objectionLetter ? objectionLetter.name : 'Upload Query Document')}
                     </span>
                     <input
                       type="file"
                       accept=".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg"
                       style={{ display: 'none' }}
-                      onChange={(e) => handleFileConvert(e, setObjectionLetter)}
+                      onChange={handleObjectionUpload}
+                      disabled={uploadingObjection}
                     />
                   </label>
                 </div>

@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { Handshake, Plus, Sparkles, Scale, Info, ChevronRight, AlertTriangle, TrendingUp, DollarSign, Upload, MessageSquare, Loader2 } from 'lucide-react';
+import { 
+  Building, DollarSign, Sparkles, Scale, Info, ChevronRight, AlertTriangle, 
+  Coins, MessageSquare, Loader2, Sliders, LayoutDashboard, ShieldCheck, Upload,
+  Handshake, Plus, TrendingUp
+} from 'lucide-react';
+import { uploadFile } from '../../config/supabase';
 import './AiModules.css';
 
 function formatMarkdown(text) {
@@ -61,6 +66,7 @@ export default function JVAgreementPage() {
   const [builderTerms, setBuilderTerms] = useState('');
   const [investorTerms, setInvestorTerms] = useState('');
   const [termSheet, setTermSheet] = useState(null);
+  const [uploadingTermSheet, setUploadingTermSheet] = useState(false);
 
   useEffect(() => {
     fetchAgreements();
@@ -81,19 +87,21 @@ export default function JVAgreementPage() {
     }
   };
 
-  const handleFileConvert = (e, setFile) => {
+  const handleTermSheetUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFile({
-        name: file.name,
-        base64: reader.result,
-        mimeType: file.type
-      });
-    };
-    reader.readAsDataURL(file);
+    setUploadingTermSheet(true);
+    try {
+      toast.info(`Uploading ${file.name} to cloud storage...`);
+      const url = await uploadFile(file, 'innonsh-assets');
+      setTermSheet({ name: file.name, url });
+      toast.success('Term sheet uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to upload term sheet.');
+    } finally {
+      setUploadingTermSheet(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -116,7 +124,7 @@ export default function JVAgreementPage() {
         landOwnerTerms: landOwnerTerms || 'Standard Area/Profit Share',
         builderTerms: builderTerms || 'Standard Development Terms',
         investorTerms: investorTerms || 'No special investor terms',
-        termSheet: termSheet ? { base64: termSheet.base64, mimeType: termSheet.mimeType } : undefined,
+        termSheet: termSheet ? { url: termSheet.url, mimeType: 'application/pdf' } : undefined,
       };
 
       toast.info('Analyzing JV proposals with Gemini AI...');
@@ -334,14 +342,15 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                 <label className={`ai-upload-zone ${termSheet ? 'ai-uploaded-file' : ''}`}>
                   <Upload className="ai-upload-icon" size={20} />
                   <span className="ai-upload-text">
-                    {termSheet ? termSheet.name : 'Upload Term Sheet PDF/Txt'}
+                    {uploadingTermSheet ? 'Uploading to Supabase...' : (termSheet ? termSheet.name : 'Upload Term Sheet PDF/Txt')}
                   </span>
                   <span className="ai-upload-hint">Gemini checks clauses and preferred exits</span>
                   <input
                     type="file"
                     accept=".pdf,.txt,.doc,.docx"
                     style={{ display: 'none' }}
-                    onChange={(e) => handleFileConvert(e, setTermSheet)}
+                    onChange={handleTermSheetUpload}
+                    disabled={uploadingTermSheet}
                   />
                 </label>
               </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { aiService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { Calculator, Plus, Sparkles, Scale, Info, ChevronRight, BarChart3, TrendingUp, HelpCircle, Upload, MessageSquare, Loader2 } from 'lucide-react';
+import { uploadFile } from '../../config/supabase';
 import './AiModules.css';
 
 function formatMarkdown(text) {
@@ -56,6 +57,7 @@ export default function FeasibilityPage() {
   const [sellingPrice, setSellingPrice] = useState('');
   const [materialCost, setMaterialCost] = useState('');
   const [bylawsDoc, setBylawsDoc] = useState(null);
+  const [uploadingBylaws, setUploadingBylaws] = useState(false);
 
   useEffect(() => {
     fetchStudies();
@@ -76,19 +78,21 @@ export default function FeasibilityPage() {
     }
   };
 
-  const handleFileConvert = (e, setFile) => {
+  const handleBylawsUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFile({
-        name: file.name,
-        base64: reader.result,
-        mimeType: file.type
-      });
-    };
-    reader.readAsDataURL(file);
+    setUploadingBylaws(true);
+    try {
+      toast.info(`Uploading ${file.name} to cloud storage...`);
+      const url = await uploadFile(file, 'innonsh-assets');
+      setBylawsDoc({ name: file.name, url });
+      toast.success('Bylaws document uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to upload bylaws document.');
+    } finally {
+      setUploadingBylaws(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -106,7 +110,7 @@ export default function FeasibilityPage() {
         fsi: Number(fsi),
         sellingPrice: Number(sellingPrice),
         materialCost: Number(materialCost),
-        bylawsDoc: bylawsDoc ? { base64: bylawsDoc.base64, mimeType: bylawsDoc.mimeType } : undefined,
+        bylawsDoc: bylawsDoc ? { url: bylawsDoc.url, mimeType: 'application/pdf' } : undefined,
       };
 
       toast.info('Calculating feasibility indices with Gemini AI...');
@@ -260,20 +264,20 @@ Please advise me on municipal compliance, financial structure, material procurem
                 </div>
               </div>
 
-              {/* Bye-laws upload */}
               <div className="ai-form-group mb-4">
                 <label className="ai-label">Municipal Bye-Laws document</label>
                 <label className={`ai-upload-zone ${bylawsDoc ? 'ai-uploaded-file' : ''}`}>
                   <Upload className="ai-upload-icon" size={20} />
                   <span className="ai-upload-text">
-                    {bylawsDoc ? bylawsDoc.name : 'Upload Bye-Laws PDF/Image'}
+                    {uploadingBylaws ? 'Uploading to Supabase...' : (bylawsDoc ? bylawsDoc.name : 'Upload Bye-Laws PDF/Image')}
                   </span>
                   <span className="ai-upload-hint">Gemini checks heights, margins, and setbacks</span>
                   <input
                     type="file"
                     accept=".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg"
                     style={{ display: 'none' }}
-                    onChange={(e) => handleFileConvert(e, setBylawsDoc)}
+                    onChange={handleBylawsUpload}
+                    disabled={uploadingBylaws}
                   />
                 </label>
               </div>
