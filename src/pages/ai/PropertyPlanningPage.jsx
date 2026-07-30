@@ -7,6 +7,7 @@ import {
   Building, DollarSign, Ruler, Compass, Layers, CheckSquare, AlertTriangle, ShieldCheck, 
   Send, Bot, User, Coins, Sliders, AlertCircle, Scale, Percent
 } from 'lucide-react';
+import { convertValue, AREA_UNITS, WIDTH_UNITS } from '../../utils/unitConverter';
 import './AiModules.css';
 
 function formatMarkdown(text) {
@@ -65,7 +66,9 @@ export default function PropertyPlanningPage() {
   // Form states
   const [projectName, setProjectName] = useState('');
   const [plotSize, setPlotSize] = useState('');
+  const [plotSizeUnit, setPlotSizeUnit] = useState('sqft');
   const [roadWidth, setRoadWidth] = useState('');
+  const [roadWidthUnit, setRoadWidthUnit] = useState('feet');
   const [fsi, setFsi] = useState('');
   const [budget, setBudget] = useState('');
   const [targetCustomer, setTargetCustomer] = useState('Mid-Tier Residential');
@@ -148,8 +151,8 @@ export default function PropertyPlanningPage() {
 
       const payload = {
         projectName,
-        plotSize: Number(plotSize),
-        roadWidth: Number(roadWidth),
+        plotSize: Number(convertValue(plotSize, plotSizeUnit, 'sqft', AREA_UNITS)),
+        roadWidth: Number(convertValue(roadWidth, roadWidthUnit, 'feet', WIDTH_UNITS)),
         fsi: Number(fsi),
         budget: Number(budget),
         targetCustomer,
@@ -181,7 +184,9 @@ export default function PropertyPlanningPage() {
       // Reset form
       setProjectName('');
       setPlotSize('');
+      setPlotSizeUnit('sqft');
       setRoadWidth('');
+      setRoadWidthUnit('feet');
       setFsi('');
       setBudget('');
       setLandCost('');
@@ -597,24 +602,64 @@ Please advise me on the architectural design revisions, spatial configurations, 
                 </span>
                 <div className="grid grid-4 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
                   <div className="ai-form-group">
-                    <label className="ai-label">Plot Size (Sq. Ft.)</label>
-                    <input
-                      type="number"
-                      className="ai-input"
-                      placeholder="e.g. 12000"
-                      value={plotSize}
-                      onChange={(e) => setPlotSize(e.target.value)}
-                    />
+                    <label className="ai-label">Plot Size</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="number"
+                        className="ai-input"
+                        style={{ flex: 1 }}
+                        placeholder="e.g. 12000"
+                        value={plotSize}
+                        onChange={(e) => setPlotSize(e.target.value)}
+                      />
+                      <select
+                        className="ai-select"
+                        style={{ width: '100px', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 8px', background: 'white' }}
+                        value={plotSizeUnit}
+                        onChange={(e) => {
+                          const oldUnit = plotSizeUnit;
+                          const newUnit = e.target.value;
+                          setPlotSizeUnit(newUnit);
+                          if (plotSize) {
+                            setPlotSize(convertValue(plotSize, oldUnit, newUnit, AREA_UNITS));
+                          }
+                        }}
+                      >
+                        {Object.entries(AREA_UNITS).map(([key, val]) => (
+                          <option key={key} value={key}>{val.label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="ai-form-group">
-                    <label className="ai-label">Road Width (Meters)</label>
-                    <input
-                      type="number"
-                      className="ai-input"
-                      placeholder="e.g. 18"
-                      value={roadWidth}
-                      onChange={(e) => setRoadWidth(e.target.value)}
-                    />
+                    <label className="ai-label">Road Width</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="number"
+                        className="ai-input"
+                        style={{ flex: 1 }}
+                        placeholder="e.g. 60"
+                        value={roadWidth}
+                        onChange={(e) => setRoadWidth(e.target.value)}
+                      />
+                      <select
+                        className="ai-select"
+                        style={{ width: '100px', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 8px', background: 'white' }}
+                        value={roadWidthUnit}
+                        onChange={(e) => {
+                          const oldUnit = roadWidthUnit;
+                          const newUnit = e.target.value;
+                          setRoadWidthUnit(newUnit);
+                          if (roadWidth) {
+                            setRoadWidth(convertValue(roadWidth, oldUnit, newUnit, WIDTH_UNITS));
+                          }
+                        }}
+                      >
+                        {Object.entries(WIDTH_UNITS).map(([key, val]) => (
+                          <option key={key} value={key}>{val.label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="ai-form-group">
                     <label className="ai-label">Permitted FSI</label>

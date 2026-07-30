@@ -376,9 +376,11 @@ export const aiService = {
 
   getLandPlots: () => api.get('/ai/land-plots'),
   analyzeLandPlot: (data) => api.post('/ai/land-analysis', data),
+  updateLandPlot: (id, data) => api.put(`/ai/land-plots/${id}`, data),
 
   getJVAgreements: () => api.get('/ai/jv-agreements'),
   analyzeJVAgreement: (data) => api.post('/ai/jv-analysis', data),
+  updateJVAgreementLifecycle: (id, data) => api.put(`/ai/jv-agreements/${id}/lifecycle`, data),
 
   getFeasibilityStudies: () => api.get('/ai/feasibility-studies'),
   calculateFeasibility: (data) => api.post('/ai/feasibility', data),
