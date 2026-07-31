@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiService, projectService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { Calculator, Plus, Sparkles, Scale, Info, ChevronRight, BarChart3, TrendingUp, HelpCircle, Upload, MessageSquare, Loader2 } from 'lucide-react';
+import { Calculator, Plus, Sparkles, Scale, Info, ChevronRight, BarChart3, TrendingUp, HelpCircle, Upload, MessageSquare, Loader2, History, FolderPlus } from 'lucide-react';
 import { uploadFile } from '../../config/supabase';
 import { convertValue, AREA_UNITS } from '../../utils/unitConverter';
 import './AiModules.css';
@@ -53,6 +53,8 @@ export default function FeasibilityPage() {
 
   // Form wizard tab selection
   const [formTab, setFormTab] = useState('basics');
+  // Main top tabs selection
+  const [activeMainTab, setActiveMainTab] = useState('calculate'); // 'calculate' or 'history'
 
   // Form states
   const [projectName, setProjectName] = useState('');
@@ -215,6 +217,7 @@ export default function FeasibilityPage() {
       const updatedStudies = [data.data, ...studies];
       setStudies(updatedStudies);
       setSelectedStudy(data.data);
+      setActiveMainTab('history');
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || 'Feasibility calculation failed.');
@@ -280,8 +283,56 @@ Please advise me on municipal compliance, financial structure, material procurem
       </div>
 
       <div className="flex flex-col gap-6 w-full">
-        {/* Top: Run Feasibility Study Form (Full Width) */}
-        <div className="ai-card w-full">
+        {/* Top-Level Navigation Tabs */}
+        <div className="premium-tabs-container" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('calculate')}
+            className={`premium-tab-btn ${activeMainTab === 'calculate' ? 'active' : ''}`}
+            style={{
+              padding: '10px 20px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: activeMainTab === 'calculate' ? '#059669' : 'transparent',
+              color: activeMainTab === 'calculate' ? '#ffffff' : '#64748b',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <FolderPlus size={16} />
+            Run Feasibility Study
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('history')}
+            className={`premium-tab-btn ${activeMainTab === 'history' ? 'active' : ''}`}
+            style={{
+              padding: '10px 20px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: activeMainTab === 'history' ? '#059669' : 'transparent',
+              color: activeMainTab === 'history' ? '#ffffff' : '#64748b',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <History size={16} />
+            Feasibility History & Reports
+          </button>
+        </div>
+
+        {activeMainTab === 'calculate' && (
+          <div className="ai-card w-full">
           <div className="ai-card-header">
             <h2 className="ai-card-title">
               <Plus size={18} />
@@ -392,18 +443,44 @@ Please advise me on municipal compliance, financial structure, material procurem
                   <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Plot Area *</label>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '8px', 
+                        backgroundColor: 'white',
+                        height: '42px',
+                        overflow: 'hidden'
+                      }}>
                         <input
                           type="number"
-                          className="ai-input"
-                          style={{ flex: 1 }}
+                          style={{ 
+                            flex: 1, 
+                            border: 'none', 
+                            outline: 'none', 
+                            padding: '0 12px', 
+                            height: '100%',
+                            fontSize: '14px',
+                            background: 'transparent'
+                          }}
                           placeholder="e.g. 5"
                           value={area}
                           onChange={(e) => setArea(e.target.value)}
                         />
+                        <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0' }} />
                         <select
-                          className="ai-select"
-                          style={{ width: '120px', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '0 8px', background: 'white' }}
+                          style={{ 
+                            width: '110px', 
+                            border: 'none', 
+                            outline: 'none', 
+                            height: '100%',
+                            padding: '0 8px', 
+                            background: 'transparent',
+                            fontSize: '13px',
+                            color: '#475569',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
                           value={areaUnit}
                           onChange={(e) => {
                             const oldUnit = areaUnit;
@@ -433,7 +510,7 @@ Please advise me on municipal compliance, financial structure, material procurem
                     </div>
                   </div>
 
-                  <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                  <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Expected Selling Price (INR / Sqft) *</label>
                       <input
@@ -454,16 +531,6 @@ Please advise me on municipal compliance, financial structure, material procurem
                         onChange={(e) => setMaterialCost(e.target.value)}
                       />
                     </div>
-                    <div className="ai-form-group">
-                      <label className="ai-label">TDR Purchase Cost (INR)</label>
-                      <input
-                        type="number"
-                        className="ai-input"
-                        placeholder="e.g. 8500000"
-                        value={tdrCost}
-                        onChange={(e) => setTdrCost(e.target.value)}
-                      />
-                    </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
@@ -475,7 +542,7 @@ Please advise me on municipal compliance, financial structure, material procurem
               {/* Form Tab 2: Financial Structures */}
               {formTab === 'financials' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+                  <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Land Acquisition Cost (INR)</label>
                       <input
@@ -484,6 +551,16 @@ Please advise me on municipal compliance, financial structure, material procurem
                         placeholder="e.g. 30000000"
                         value={landAcquisition}
                         onChange={(e) => setLandAcquisition(e.target.value)}
+                      />
+                    </div>
+                    <div className="ai-form-group">
+                      <label className="ai-label">TDR Purchase Cost (INR)</label>
+                      <input
+                        type="number"
+                        className="ai-input"
+                        placeholder="e.g. 8500000"
+                        value={tdrCost}
+                        onChange={(e) => setTdrCost(e.target.value)}
                       />
                     </div>
                     <div className="ai-form-group">
@@ -536,11 +613,11 @@ Please advise me on municipal compliance, financial structure, material procurem
 
                   <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
                     <div className="ai-form-group">
-                      <label className="ai-label">Sales Absorption Rate (Units / Month)</label>
+                      <label className="ai-label">Projected Sales Velocity / Absorption (Units or Sq.Ft / Month)</label>
                       <input
                         type="number"
                         className="ai-input"
-                        placeholder="e.g. 15"
+                        placeholder="e.g. 15 or 8000"
                         value={salesVelocity}
                         onChange={(e) => setSalesVelocity(e.target.value)}
                       />
@@ -667,31 +744,18 @@ Please advise me on municipal compliance, financial structure, material procurem
                   </div>
 
                   {/* AI Natural Language Chatbox Analyzer */}
-                  <div style={{ borderTop: '1.5px dashed #cbd5e1', paddingTop: '16px', marginTop: '10px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4f46e5', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                      <Sparkles size={14} /> AI natural language prompt analyzer (Optional chatbox)
+                  <div className="ai-form-group" style={{ marginTop: '16px' }}>
+                    <label className="ai-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Sparkles size={14} /> Custom Prompt / Additional Instructions (Optional)
                     </label>
-                    <div style={{ position: 'relative' }}>
-                      <textarea
-                        placeholder="Describe constraints in plain text! (e.g. 'We need to clear setbacks for a 15,000 sqft plot with FSI 2.5. Front setback requires 6m, rear 4.5m. We are targeting a profit margin of 25% and IRR of 18%. Let me know height and road width limitations.') and click Feasibility below."
-                        rows="3"
-                        value={chatPrompt}
-                        onChange={(e) => setChatPrompt(e.target.value)}
-                        style={{ 
-                          width: '100%', 
-                          borderRadius: '12px', 
-                          border: '1.5px solid #c7d2fe', 
-                          padding: '12px 14px',
-                          fontSize: '12px',
-                          outline: 'none',
-                          fontFamily: 'inherit',
-                          background: '#f5f3ff',
-                          color: '#4338ca',
-                          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.02)',
-                          resize: 'vertical'
-                        }}
-                      />
-                    </div>
+                    <textarea
+                      placeholder="Describe any additional constraints or instructions in plain text (e.g. 'Model commercial ROI and payback period under Pune local bylaws.')"
+                      rows="3"
+                      className="ai-input"
+                      style={{ resize: 'vertical', minHeight: '100px', padding: '10px 12px' }}
+                      value={chatPrompt}
+                      onChange={(e) => setChatPrompt(e.target.value)}
+                    />
                   </div>
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
@@ -718,8 +782,11 @@ Please advise me on municipal compliance, financial structure, material procurem
             </form>
           </div>
         </div>
+      )}
 
-        {/* Middle: Saved Feasibility Studies List (Full Width) */}
+        {activeMainTab === 'history' && (
+          <>
+            {/* Middle: Saved Feasibility Studies List (Full Width) */}
         <div className="ai-card w-full">
           <div className="ai-card-header">
             <h2 className="ai-card-title">
@@ -987,6 +1054,8 @@ Please advise me on municipal compliance, financial structure, material procurem
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

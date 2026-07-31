@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiService, projectService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { FileCheck, Plus, Sparkles, Scale, Info, AlertTriangle, Calendar, ClipboardList, Upload, MessageSquare, Loader2, Star, Check } from 'lucide-react';
+import { FileCheck, Plus, Sparkles, Scale, Info, AlertTriangle, Calendar, ClipboardList, Upload, MessageSquare, Loader2, Star, Check, Users, History, FolderPlus } from 'lucide-react';
 import { uploadFile } from '../../config/supabase';
 import './AiModules.css';
 
@@ -59,6 +59,8 @@ export default function ApprovalPage() {
 
   // Wizard tabs selection
   const [formTab, setFormTab] = useState('basics');
+  // Main top tabs selection
+  const [activeMainTab, setActiveMainTab] = useState('calculate'); // 'calculate' or 'history'
 
   // Form states
   const [authorityName, setAuthorityName] = useState('Municipal Corporation');
@@ -233,6 +235,7 @@ export default function ApprovalPage() {
       const updatedTasks = [data.data, ...tasks];
       setTasks(updatedTasks);
       setSelectedTask(data.data);
+      setActiveMainTab('history');
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || 'Gemini approval analysis failed.');
@@ -298,54 +301,147 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
       </div>
 
       <div className="flex flex-col gap-6 w-full">
-        {/* Top: Add New Approval Application Form (Full Width) */}
-        <div className="ai-card w-full">
-          <div className="ai-card-header">
-            <h2 className="ai-card-title">
-              <Plus size={18} />
-              Add New Approval Application
-            </h2>
-          </div>
-          <div className="ai-card-body" style={{ marginTop: '1rem' }}>
-            {/* Form Wizard Navigation */}
-            <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '20px', gap: '4px', overflowX: 'auto', background: '#f8fafc', padding: '6px', borderRadius: '8px' }}>
-              {[
-                { id: 'basics', label: '1. Application Basics', icon: <ClipboardList size={14} /> },
-                { id: 'financials', label: '2. Reference & Fees', icon: <Scale size={14} /> },
-                { id: 'upload', label: '3. Receipts & Upload', icon: <Upload size={14} /> }
-              ].map(tab => (
-                <button
-                  type="button"
-                  key={tab.id}
-                  onClick={() => setFormTab(tab.id)}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: '6px',
-                    border: 'none',
-                    background: formTab === tab.id ? '#059669' : 'transparent',
-                    color: formTab === tab.id ? '#ffffff' : '#64748b',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
+        {/* Top-Level Navigation Tabs */}
+        <div className="premium-tabs-container" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('calculate')}
+            className={`premium-tab-btn ${activeMainTab === 'calculate' ? 'active' : ''}`}
+            style={{
+              padding: '10px 20px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: activeMainTab === 'calculate' ? '#059669' : 'transparent',
+              color: activeMainTab === 'calculate' ? '#ffffff' : '#64748b',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <FolderPlus size={16} />
+            Track New Approval
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('history')}
+            className={`premium-tab-btn ${activeMainTab === 'history' ? 'active' : ''}`}
+            style={{
+              padding: '10px 20px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: activeMainTab === 'history' ? '#059669' : 'transparent',
+              color: activeMainTab === 'history' ? '#ffffff' : '#64748b',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <History size={16} />
+            Approvals History & Plans
+          </button>
+        </div>
+
+        {activeMainTab === 'calculate' && (
+          <div className="ai-card w-full">
+            <div className="ai-card-header">
+              <h2 className="ai-card-title">
+                <Plus size={18} />
+                Add New Approval Application
+              </h2>
             </div>
+            <div className="ai-card-body" style={{ marginTop: '1rem' }}>
+              {/* Form Wizard Navigation */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '20px', gap: '4px', overflowX: 'auto', background: '#f8fafc', padding: '6px', borderRadius: '8px' }}>
+                {[
+                  { id: 'basics', label: '1. Basics & Details', icon: <ClipboardList size={14} /> },
+                  { id: 'workflow', label: '2. Workflow & Officers', icon: <Users size={14} /> },
+                  { id: 'financials', label: '3. Fees & Uploads', icon: <Scale size={14} /> },
+                  { id: 'upload', label: '4. Checklist & Submit', icon: <Upload size={14} /> }
+                ].map(tab => (
+                  <button
+                    type="button"
+                    key={tab.id}
+                    onClick={() => setFormTab(tab.id)}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: formTab === tab.id ? '#059669' : 'transparent',
+                      color: formTab === tab.id ? '#ffffff' : '#64748b',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
             <form onSubmit={handleSubmit}>
               
               {/* Form Tab 1: Application Basics */}
+              {/* Form Tab 1: Basics & Details */}
               {formTab === 'basics' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+                  {/* Lookup references */}
+                  <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                    <div className="ai-form-group">
+                      <label className="ai-label">Link Project</label>
+                      <select
+                        className="ai-select"
+                        value={projectId}
+                        onChange={(e) => setProjectId(e.target.value)}
+                      >
+                        <option value="">-- Select Project --</option>
+                        {projectsList.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="ai-form-group">
+                      <label className="ai-label">Link JV Agreement</label>
+                      <select
+                        className="ai-select"
+                        value={jvId}
+                        onChange={(e) => setJvId(e.target.value)}
+                      >
+                        <option value="">-- Select JV Agreement --</option>
+                        {jvsList.map(jv => (
+                          <option key={jv.id} value={jv.id}>{jv.name || 'Joint Venture Plan'}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="ai-form-group">
+                      <label className="ai-label">Link Land Plot</label>
+                      <select
+                        className="ai-select"
+                        value={landId}
+                        onChange={(e) => setLandId(e.target.value)}
+                      >
+                        <option value="">-- Select Land Plot --</option>
+                        {landsList.map(l => (
+                          <option key={l.id} value={l.id}>{l.surveyNumber || l.title || 'Acquired Land'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Authority / Agency *</label>
                       <select
@@ -374,6 +470,16 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                         <option value="QUERY_RAISED">Query Raised</option>
                         <option value="APPROVED">Approved</option>
                       </select>
+                    </div>
+                    <div className="ai-form-group">
+                      <label className="ai-label">Application Reg. Number</label>
+                      <input
+                        type="text"
+                        className="ai-input"
+                        placeholder="e.g. MH-RERA-2026-904"
+                        value={appRegNumber}
+                        onChange={(e) => setAppRegNumber(e.target.value)}
+                      />
                     </div>
                   </div>
 
@@ -421,6 +527,15 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                     </div>
                   </div>
 
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('workflow')}>Next: Workflow & Officers →</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Tab 2: Workflow & Officers */}
+              {formTab === 'workflow' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Submission Date *</label>
@@ -443,68 +558,7 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('financials')}>Next: Reference & Fees →</button>
-                  </div>
-                </div>
-              )}
-
-              {/* Form Tab 2: Reference & Fees */}
-              {formTab === 'financials' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* Lookup selectors */}
-                  <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-                    <div className="ai-form-group">
-                      <label className="ai-label">Link Project</label>
-                      <select
-                        className="ai-select"
-                        value={projectId}
-                        onChange={(e) => setProjectId(e.target.value)}
-                      >
-                        <option value="">-- Select Project --</option>
-                        {projectsList.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="ai-form-group">
-                      <label className="ai-label">Link JV Agreement</label>
-                      <select
-                        className="ai-select"
-                        value={jvId}
-                        onChange={(e) => setJvId(e.target.value)}
-                      >
-                        <option value="">-- Select JV Agreement --</option>
-                        {jvsList.map(jv => (
-                          <option key={jv.id} value={jv.id}>{jv.name || 'Joint Venture Plan'}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="ai-form-group">
-                      <label className="ai-label">Link Land Plot</label>
-                      <select
-                        className="ai-select"
-                        value={landId}
-                        onChange={(e) => setLandId(e.target.value)}
-                      >
-                        <option value="">-- Select Land Plot --</option>
-                        {landsList.map(l => (
-                          <option key={l.id} value={l.id}>{l.surveyNumber || l.title || 'Acquired Land'}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-                    <div className="ai-form-group">
-                      <label className="ai-label">Application Reg. Number</label>
-                      <input
-                        type="text"
-                        className="ai-input"
-                        placeholder="e.g. MH-RERA-2026-904"
-                        value={appRegNumber}
-                        onChange={(e) => setAppRegNumber(e.target.value)}
-                      />
-                    </div>
+                  <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Contact Officer Name</label>
                       <input
@@ -527,6 +581,16 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                     </div>
                   </div>
 
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('basics')}>← Back</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('financials')}>Next: Fees & Uploads →</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Tab 3: Fees & Document Uploads */}
+              {formTab === 'financials' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
                     <div className="ai-form-group">
                       <label className="ai-label">Application Fees Paid (INR)</label>
@@ -550,18 +614,7 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('basics')}>← Back</button>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('upload')}>Next: Receipts & Upload →</button>
-                  </div>
-                </div>
-              )}
-
-              {/* Form Tab 3: Receipts & Upload */}
-              {formTab === 'upload' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-                    
                     {/* Objection letter */}
                     <div className="ai-form-group">
                       <label className="ai-label">Objection Notice Letter (If Query Raised)</label>
@@ -599,32 +652,29 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                     </div>
                   </div>
 
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('workflow')}>← Back</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormTab('upload')}>Next: Checklist & Submit →</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Tab 4: Checklist & Submit */}
+              {formTab === 'upload' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* AI Natural Language Chatbox Analyzer */}
-                  <div style={{ borderTop: '1.5px dashed #cbd5e1', paddingTop: '16px', marginTop: '10px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4f46e5', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                      <Sparkles size={14} /> AI natural language prompt analyzer (Optional chatbox)
+                  <div className="ai-form-group">
+                    <label className="ai-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Sparkles size={14} /> Custom Prompt / Additional Instructions (Optional)
                     </label>
-                    <div style={{ position: 'relative' }}>
-                      <textarea
-                        placeholder="Describe constraints in plain text! (e.g. 'We submitted the Fire NOC application with number APP-4491. Target SLA is 45 days. We paid an application fee of INR 15,000. Environmental clearance raises an objection on green belt setbacks.') and click Delay Predictor below."
-                        rows="3"
-                        value={chatPrompt}
-                        onChange={(e) => setChatPrompt(e.target.value)}
-                        style={{ 
-                          width: '100%', 
-                          borderRadius: '12px', 
-                          border: '1.5px solid #c7d2fe', 
-                          padding: '12px 14px',
-                          fontSize: '12px',
-                          outline: 'none',
-                          fontFamily: 'inherit',
-                          background: '#f5f3ff',
-                          color: '#4338ca',
-                          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.02)',
-                          resize: 'vertical'
-                        }}
-                      />
-                    </div>
+                    <textarea
+                      placeholder="Describe any additional constraints or instructions in plain text (e.g. 'Review setbacks and fire NOC clearances.')"
+                      rows="3"
+                      className="ai-input"
+                      style={{ resize: 'vertical', minHeight: '100px', padding: '10px 12px' }}
+                      value={chatPrompt}
+                      onChange={(e) => setChatPrompt(e.target.value)}
+                    />
                   </div>
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
@@ -651,8 +701,11 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
             </form>
           </div>
         </div>
+      )}
 
-        {/* Middle: Kanban Board (Full Width) */}
+      {activeMainTab === 'history' && (
+        <>
+          {/* Middle: Kanban Board (Full Width) */}
         <div className="ai-card w-full">
           <div className="ai-card-header">
             <h2 className="ai-card-title">
@@ -791,7 +844,7 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                       <div><strong>Sub Date:</strong> {new Date(selectedTask.submissionDate).toLocaleDateString()}</div>
                       <div><strong>Target SLA:</strong> {selectedTask.targetSlaDays || 30} Days</div>
                       <div style={{ color: '#b91c1c', fontWeight: 'bold', marginTop: '2px' }}>
-                        <strong>Estimated Delay:</strong> {selectedTask.slaTimeline?.currentDelayDays || 5} Days
+                        <strong>Estimated Delay:</strong> {selectedTask.slaTimeline?.currentDelayDays || 0} Days
                       </div>
                     </div>
                   </div>
@@ -826,37 +879,34 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                 {/* 3. Approval Progress Stepper Dashboard */}
                 <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
                   <h4 style={{ margin: '0 0 16px 0', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em' }}>📋 Approval Workflow Milestones</h4>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    {(selectedTask.progressSteps && selectedTask.progressSteps.length > 0 ? selectedTask.progressSteps : [
-                      { stepName: "Submitted", status: "COMPLETED", date: "12 July" },
-                      { stepName: "Document Verification", status: "COMPLETED", date: "15 July" },
-                      { stepName: "Technical Review", status: "COMPLETED", date: "18 July" },
-                      { stepName: "Query Raised", status: "COMPLETED", date: "20 July" },
-                      { stepName: "Resubmitted", status: "PENDING", date: null },
-                      { stepName: "Approved", status: "PENDING", date: null }
-                    ]).map((step, index) => (
-                      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '130px' }}>
-                        <div style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: step.status === 'COMPLETED' ? '#e6f4ea' : '#f1f5f9',
-                          border: `1.5px solid ${step.status === 'COMPLETED' ? '#137333' : '#cbd5e1'}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: step.status === 'COMPLETED' ? '#137333' : '#64748b',
-                          fontSize: '10px'
-                        }}>
-                          {step.status === 'COMPLETED' ? <Check size={12} /> : index + 1}
+                  {selectedTask.progressSteps && selectedTask.progressSteps.length > 0 ? (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                      {selectedTask.progressSteps.map((step, index) => (
+                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '130px' }}>
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: step.status === 'COMPLETED' ? '#e6f4ea' : '#f1f5f9',
+                            border: `1.5px solid ${step.status === 'COMPLETED' ? '#137333' : '#cbd5e1'}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: step.status === 'COMPLETED' ? '#137333' : '#64748b',
+                            fontSize: '10px'
+                          }}>
+                            {step.status === 'COMPLETED' ? <Check size={12} /> : index + 1}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '11px', fontWeight: 'bold', color: step.status === 'COMPLETED' ? '#1e293b' : '#64748b' }}>{step.stepName}</div>
+                            {step.date && <div style={{ fontSize: '9px', color: '#64748b' }}>{step.date}</div>}
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: step.status === 'COMPLETED' ? '#1e293b' : '#64748b' }}>{step.stepName}</div>
-                          {step.date && <div style={{ fontSize: '9px', color: '#64748b' }}>{step.date}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center' }}>No milestones details logged yet.</div>
+                  )}
                 </div>
 
                 {/* 4. Missing Documents Metrics and actions checklist */}
@@ -869,38 +919,42 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', margin: '14px 0', textAlign: 'center' }}>
                     <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '8px' }}>
                       <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>
-                        {selectedTask.missingDocMetrics?.required || 18}
+                        {selectedTask.missingDocMetrics?.required || 0}
                       </div>
                       <div style={{ fontSize: '10px', color: '#64748b' }}>Required</div>
                     </div>
                     <div style={{ background: '#ecfdf5', padding: '8px', borderRadius: '8px' }}>
                       <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#047857' }}>
-                        {selectedTask.missingDocMetrics?.uploaded || 16}
+                        {selectedTask.missingDocMetrics?.uploaded || 0}
                       </div>
                       <div style={{ fontSize: '10px', color: '#64748b' }}>Uploaded</div>
                     </div>
                     <div style={{ background: '#fef2f2', padding: '8px', borderRadius: '8px' }}>
                       <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#b91c1c' }}>
-                        {selectedTask.missingDocMetrics?.missing || 2}
+                        {selectedTask.missingDocMetrics?.missing || 0}
                       </div>
                       <div style={{ fontSize: '10px', color: '#64748b' }}>Missing</div>
                     </div>
                   </div>
-
+ 
                   {/* List of Pending Documents */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
                     <h5 style={{ fontSize: '11px', margin: '0 0 4px 0', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚠️ Pending submissions checklist:</h5>
-                    {(selectedTask.missingDocMetrics?.pendingList || ["Fire Drawing", "Structural Stability Certificate"]).map((doc, idx) => (
-                      <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: checkedDocs[idx] ? '#94a3b8' : '#334155', textDecoration: checkedDocs[idx] ? 'line-through' : 'none', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={!!checkedDocs[idx]}
-                          onChange={() => setCheckedDocs(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                          style={{ accentColor: '#059669', width: '15px', height: '15px', cursor: 'pointer' }}
-                        />
-                        {doc}
-                      </label>
-                    ))}
+                    {selectedTask.missingDocMetrics?.pendingList && selectedTask.missingDocMetrics.pendingList.length > 0 ? (
+                      selectedTask.missingDocMetrics.pendingList.map((doc, idx) => (
+                        <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: checkedDocs[idx] ? '#94a3b8' : '#334155', textDecoration: checkedDocs[idx] ? 'line-through' : 'none', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={!!checkedDocs[idx]}
+                            onChange={() => setCheckedDocs(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                            style={{ accentColor: '#059669', width: '15px', height: '15px', cursor: 'pointer' }}
+                          />
+                          {doc}
+                        </label>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>No pending submissions checklist items required.</div>
+                    )}
                   </div>
                 </div>
 
@@ -911,28 +965,31 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                   </h3>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-                    {(selectedTask.objectionQueries && selectedTask.objectionQueries.length > 0 ? selectedTask.objectionQueries : [
-                      { queryNum: 1, text: "Parking calculation mismatch against development bylaws setbacks", priority: "HIGH", suggestedAction: "Revise parking drawing margins" },
-                      { queryNum: 2, text: "Missing Fire NOC Clearance certificate signature slip", priority: "MEDIUM", suggestedAction: "Obtain PMC Fire Clearance NOC" }
-                    ]).map((query, idx) => (
-                      <div key={idx} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#fafafa' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Query {query.queryNum || idx + 1}</span>
-                          <span style={{
-                            fontSize: '9px',
-                            fontWeight: 'bold',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            background: query.priority === 'HIGH' ? '#fef2f2' : '#fffbeb',
-                            color: query.priority === 'HIGH' ? '#b91c1c' : '#d97706'
-                          }}>{query.priority} Priority</span>
+                    {selectedTask.objectionQueries && selectedTask.objectionQueries.length > 0 ? (
+                      selectedTask.objectionQueries.map((query, idx) => (
+                        <div key={idx} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#fafafa' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Query {query.queryNum || idx + 1}</span>
+                            <span style={{
+                              fontSize: '9px',
+                              fontWeight: 'bold',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: query.priority === 'HIGH' ? '#fef2f2' : '#fffbeb',
+                              color: query.priority === 'HIGH' ? '#b91c1c' : '#d97706'
+                            }}>{query.priority} Priority</span>
+                          </div>
+                          <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#1e293b', lineHeight: '1.4' }}>{query.text}</p>
+                          {query.suggestedAction && (
+                            <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '6px 10px', borderRadius: '4px' }}>
+                              <strong>Suggested Action:</strong> {query.suggestedAction}
+                            </div>
+                          )}
                         </div>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#1e293b', lineHeight: '1.4' }}>{query.text}</p>
-                        <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '6px 10px', borderRadius: '4px' }}>
-                          <strong>Suggested Action:</strong> {query.suggestedAction}
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', padding: '12px 0' }}>No formal objection queries logged.</div>
+                    )}
                   </div>
                 </div>
 
@@ -940,38 +997,37 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em' }}>🗂️ Application Resubmission History</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {(selectedTask.resubmissionHistory && selectedTask.resubmissionHistory.length > 0 ? selectedTask.resubmissionHistory : [
-                      { submissionNum: 1, date: "12 July", status: "Rejected" },
-                      { submissionNum: 2, date: "20 July", status: "Query Raised" },
-                      { submissionNum: 3, date: "Pending", status: "Pending" }
-                    ]).map((sub, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '6px 0', borderBottom: idx < 2 ? '1px solid #e2e8f0' : 'none' }}>
-                        <span style={{ fontWeight: 'bold', color: '#334155' }}>Submission {sub.submissionNum}</span>
-                        <span style={{ color: '#475569' }}>{sub.date}</span>
-                        <span style={{
-                          fontWeight: 'bold',
-                          color: sub.status === 'Rejected' ? '#b91c1c' : (sub.status === 'Query Raised' ? '#d97706' : '#64748b')
-                        }}>{sub.status}</span>
-                      </div>
-                    ))}
+                    {selectedTask.resubmissionHistory && selectedTask.resubmissionHistory.length > 0 ? (
+                      selectedTask.resubmissionHistory.map((sub, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '6px 0', borderBottom: idx < selectedTask.resubmissionHistory.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
+                          <span style={{ fontWeight: 'bold', color: '#334155' }}>Submission {sub.submissionNum}</span>
+                          <span style={{ color: '#475569' }}>{sub.date}</span>
+                          <span style={{
+                            fontWeight: 'bold',
+                            color: sub.status === 'Rejected' ? '#b91c1c' : (sub.status === 'Query Raised' ? '#d97706' : '#64748b')
+                          }}>{sub.status}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center' }}>No resubmission history recorded.</div>
+                    )}
                   </div>
                 </div>
-
+ 
                 {/* 7. AI Suggestions Quick Action List */}
                 <div style={{ background: '#f0fdf4', padding: '16px', borderRadius: '12px', border: '1px solid #bbf7d0', marginBottom: '20px' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: '#14532d', letterSpacing: '0.05em' }}>⚡ AI Recommendations</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {(selectedTask.aiSuggestions && selectedTask.aiSuggestions.length > 0 ? selectedTask.aiSuggestions : [
-                      "Upload Fire Drawing",
-                      "Correct Parking Layout",
-                      "Verify Structural Certificate",
-                      "Re-submit within 5 days"
-                    ]).map((sug, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#14532d' }}>
-                        <Check size={14} style={{ color: '#16a34a' }} />
-                        <span>{sug}</span>
-                      </div>
-                    ))}
+                    {selectedTask.aiSuggestions && selectedTask.aiSuggestions.length > 0 ? (
+                      selectedTask.aiSuggestions.map((sug, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#14532d' }}>
+                          <Check size={14} style={{ color: '#16a34a' }} />
+                          <span>{sug}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center' }}>No suggestions generated.</div>
+                    )}
                   </div>
                 </div>
 
@@ -996,6 +1052,8 @@ Please advise me on the legal compliance strategy, document drafting checklist, 
             </div>
           )}
         </div>
+        </>
+      )}
       </div>
     </div>
   );
