@@ -392,4 +392,5 @@ export const aiService = {
   generatePropertyPlan: (data) => api.post('/ai/property-planning', data),
 
   getDocumentCatalog: () => api.get('/ai/documents'),
+  deleteDocument: (id) => api.delete(`/ai/documents/${id}`),
 };

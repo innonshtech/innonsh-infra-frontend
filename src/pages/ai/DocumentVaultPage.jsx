@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { aiService } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { FileText, Search, Filter, Download, ExternalLink, Calendar, User, LayoutGrid, Info } from 'lucide-react';
+import { FileText, Search, Filter, Download, ExternalLink, Calendar, User, LayoutGrid, Info, Trash2 } from 'lucide-react';
 import './AiModules.css';
 
 export default function DocumentVaultPage() {
@@ -72,6 +72,20 @@ export default function DocumentVaultPage() {
       URL.revokeObjectURL(url);
     } else {
       window.open(doc.fileUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleDelete = async (doc) => {
+    if (!window.confirm(`Are you sure you want to permanently delete the document "${doc.title}" from the vault?`)) {
+      return;
+    }
+    try {
+      await aiService.deleteDocument(doc.id);
+      toast.success('Document deleted successfully from database');
+      fetchDocuments();
+    } catch (err) {
+      toast.error('Failed to delete document');
+      console.error(err);
     }
   };
 
@@ -194,7 +208,7 @@ export default function DocumentVaultPage() {
                           })}
                         </div>
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', border: 'none' }}>
                         <button
                           onClick={() => handleDownload(doc)}
                           className="btn btn-ghost btn-icon text-primary cursor-pointer"
@@ -202,6 +216,14 @@ export default function DocumentVaultPage() {
                           style={{ padding: '4px' }}
                         >
                           <Download size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(doc)}
+                          className="btn btn-ghost btn-icon text-danger cursor-pointer"
+                          title="Delete document permanently"
+                          style={{ padding: '4px', color: '#dc2626' }}
+                        >
+                          <Trash2 size={15} />
                         </button>
                       </td>
                     </tr>
