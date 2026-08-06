@@ -373,6 +373,7 @@
   color: var(--text-primary);
   border-top-left-radius: 0;
   border: 1px solid var(--border-primary);
+  white-space: normal;
 }
 
 .copy-message-btn {

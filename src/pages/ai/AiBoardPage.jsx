@@ -171,31 +171,121 @@ export default function AiBoardPage() {
     if (!text) return '';
 
     // Escape HTML tags to prevent XSS
-    let formatted = text
+    let escaped = text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Handle code blocks (triple backticks)
-    formatted = formatted.replace(/```([\s\S]*?)```/g, (match, code) => {
-      return `<pre class="code-block"><code>${code.trim()}</code></pre>`;
+    // 1. Parse Code Blocks
+    const codeBlocks = [];
+    escaped = escaped.replace(/```([\s\S]*?)```/g, (match, code) => {
+      const id = `__CODE_BLOCK_${codeBlocks.length}__`;
+      codeBlocks.push(`<pre class="code-block"><code>${code.trim()}</code></pre>`);
+      return id;
     });
 
-    // Handle inline code (single backticks)
-    formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+    // 2. Parse Inline Code
+    escaped = escaped.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
 
-    // Handle markdown headers (# Heading, ## Heading, etc.)
-    formatted = formatted.replace(/^\s*#{1,6}\s+(.+)$/gm, '<h4 style="font-weight: 700; color: #1e293b; margin-top: 12px; margin-bottom: 6px;">$1</h4>');
+    // 3. Split by lines to process block-level elements
+    const lines = escaped.split('\n');
+    let inList = false;
+    let listType = null; // 'ul' or 'ol'
+    const processedLines = [];
 
-    // Handle bold (**text**)
-    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
 
-    // Handle bullet lists (bullet starting with - or *)
-    formatted = formatted.replace(/^\s*[-*]\s+(.+)$/gm, '<li style="margin-left: 16px; list-style-type: disc; margin-top: 4px; margin-bottom: 4px;">$1</li>');
-    formatted = formatted.replace(/(<li style="[^"]*">.*<\/li>)/s, '<ul>$1</ul>');
+      // Check if it's a code block placeholder
+      if (line.trim().startsWith('__CODE_BLOCK_') && line.trim().endsWith('__')) {
+        if (inList) {
+          processedLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+          inList = false;
+          listType = null;
+        }
+        processedLines.push(line);
+        continue;
+      }
 
-    // Convert newlines to breaks
-    return formatted.replace(/\n/g, '<br />');
+      // Check for markdown headers (# Heading)
+      const headerMatch = line.match(/^\s*#{1,6}\s+(.+)$/);
+      if (headerMatch) {
+        if (inList) {
+          processedLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+          inList = false;
+          listType = null;
+        }
+        processedLines.push(`<h4 style="font-weight: 700; color: var(--accent-primary); margin-top: 14px; margin-bottom: 6px; font-size: 13px;">${headerMatch[1]}</h4>`);
+        continue;
+      }
+
+      // Check for bullet list item
+      const bulletMatch = line.match(/^\s*[-*+]\s+(.+)$/);
+      if (bulletMatch) {
+        if (!inList) {
+          processedLines.push('<ul style="margin-left: 0; padding-left: 16px; list-style-type: disc; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;">');
+          inList = true;
+          listType = 'ul';
+        } else if (listType !== 'ul') {
+          processedLines.push('</ol>');
+          processedLines.push('<ul style="margin-left: 0; padding-left: 16px; list-style-type: disc; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;">');
+          listType = 'ul';
+        }
+        let itemText = bulletMatch[1].replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        processedLines.push(`<li style="color: var(--text-primary); font-size: 11.5px; line-height: 1.45;">${itemText}</li>`);
+        continue;
+      }
+
+      // Check for ordered list item (1. Item)
+      const orderedMatch = line.match(/^\s*\d+\.\s+(.+)$/);
+      if (orderedMatch) {
+        if (!inList) {
+          processedLines.push('<ol style="margin-left: 0; padding-left: 16px; list-style-type: decimal; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;">');
+          inList = true;
+          listType = 'ol';
+        } else if (listType !== 'ol') {
+          processedLines.push('</ul>');
+          processedLines.push('<ol style="margin-left: 0; padding-left: 16px; list-style-type: decimal; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;">');
+          listType = 'ol';
+        }
+        let itemText = orderedMatch[1].replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        processedLines.push(`<li style="color: var(--text-primary); font-size: 11.5px; line-height: 1.45;">${itemText}</li>`);
+        continue;
+      }
+
+      // Empty line closes list and inserts spacer
+      if (!line.trim()) {
+        if (inList) {
+          processedLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+          inList = false;
+          listType = null;
+        }
+        processedLines.push('<div style="height: 6px;"></div>');
+        continue;
+      }
+
+      // Regular line
+      if (inList) {
+        processedLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+        inList = false;
+        listType = null;
+      }
+
+      let formattedLine = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      processedLines.push(`<p style="margin-bottom: 6px; line-height: 1.5; font-size: 11.5px; color: var(--text-primary);">${formattedLine}</p>`);
+    }
+
+    if (inList) {
+      processedLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+    }
+
+    // Reconstruct and replace code block placeholders
+    let result = processedLines.join('\n');
+    codeBlocks.forEach((codeBlock, index) => {
+      result = result.replace(`__CODE_BLOCK_${index}__`, codeBlock);
+    });
+
+    return result;
   };
 
   // Preset starter suggestions
