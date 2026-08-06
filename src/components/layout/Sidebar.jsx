@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Calculator, ShoppingCart,
   Package, IndianRupee, Building2, Grid3X3, BookOpen,
   FileText, Users, Users2, Scale, ClipboardList, BarChart3,
-  Settings, ChevronLeft, ChevronRight, HardHat, LogOut, Wrench, Bell, Sparkles,
+  Settings, ChevronLeft, ChevronRight, HardHat, LogOut, Wrench, Bell, Sparkles, X,
   Map as MapIcon, Handshake, FileCheck, FilePieChart
 } from 'lucide-react';
 import { useState } from 'react';
@@ -269,6 +269,15 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
             </span>
           </div>
         )}
+        {/* Mobile close button (cross icon) */}
+        <button
+          className="sidebar-mobile-close"
+          onClick={() => setMobileOpen(false)}
+          title="Close Navigation"
+        >
+          <X size={18} />
+        </button>
+
         <button
           className="sidebar-toggle"
           onClick={() => setCollapsed(!collapsed)}

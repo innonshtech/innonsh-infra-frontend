@@ -321,6 +321,11 @@
   opacity: 0.7;
 }
 
+/* Close button for mobile drawer (hidden on desktop) */
+.sidebar-mobile-close {
+  display: none;
+}
+
 /* --- Mobile Viewport (Drawer Sidebar) --- */
 @media (max-width: 768px) {
   .sidebar {
@@ -338,6 +343,30 @@
 
   .sidebar.mobile-open {
     transform: translateX(0);
+  }
+
+  /* Close button styling inside sidebar brand on mobile */
+  .sidebar-mobile-close {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border-primary, #e5e7eb);
+    background: transparent;
+    color: var(--text-secondary, #4b5563);
+    cursor: pointer;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  .sidebar-mobile-close:hover {
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--accent-primary, #1b5e4f);
   }
 
   /* Hide the toggle collapse arrow button on mobile */
