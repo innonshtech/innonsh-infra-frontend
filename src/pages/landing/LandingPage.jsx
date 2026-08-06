@@ -90,8 +90,8 @@ function Header() {
           </div>
 
           <div className="lp-nav-actions">
-            <Link to="/login" className="lp-btn-ghost lp-nav-signin">Sign in</Link>
-            <a href="#cta" className="lp-btn-primary">
+            <Link to="/login" className="lp-btn-ghost lp-nav-signin">Login</Link>
+            <a href="#cta" className="lp-btn-primary lp-nav-cta">
               Request Demo
               <ArrowUpRight size={16} />
             </a>
@@ -117,7 +117,11 @@ function Header() {
             <a href="#how" onClick={() => setMobileMenuOpen(false)}>How it works</a>
             <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
             <hr className="lp-mobile-menu-divider" />
-            <Link to="/login" className="lp-btn-ghost lp-mobile-menu-signin" onClick={() => setMobileMenuOpen(false)}>Sign in</Link>
+            <a href="#cta" className="lp-btn-primary lp-mobile-menu-cta" onClick={() => setMobileMenuOpen(false)}>
+              Request Demo
+              <ArrowUpRight size={16} />
+            </a>
+            <Link to="/login" className="lp-btn-ghost lp-mobile-menu-signin" onClick={() => setMobileMenuOpen(false)}>Login</Link>
           </div>
         </div>
       )}

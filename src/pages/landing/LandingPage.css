@@ -1818,8 +1818,30 @@
 /* Layout adjustments on mobile viewports */
 @media (max-width: 767px) {
   /* Logo adjustments */
+  .lp-logo-title {
+    font-size: 14px !important;
+  }
   .lp-logo-subtitle {
     display: none; /* Hide subtitle on mobile for less clutter */
+  }
+
+  /* Show Login button on mobile and style it beautifully */
+  .lp-nav-signin {
+    display: inline-flex !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8125rem !important;
+    border-radius: 9999px !important;
+    border: 1.5px solid var(--lp-indigo-500) !important;
+    color: var(--lp-indigo-700) !important;
+    background: transparent !important;
+  }
+  .lp-nav-signin:hover {
+    background: var(--lp-indigo-50) !important;
+  }
+
+  /* Hide Request Demo button in top navigation on mobile to keep space clean */
+  .lp-nav-cta {
+    display: none !important;
   }
 
   /* Make sure hero trust badges wrap instead of overflowing horizontally */
