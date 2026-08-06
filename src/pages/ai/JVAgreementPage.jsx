@@ -1669,163 +1669,155 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                 {activeTab === 'overview' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* Basic Info & Land Info side by side */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="ai-detail-grid">
+                      <div className="ai-detail-card">
+                        <h4>
                           <Building size={16} /> 1. Basic Information
                         </h4>
-                        <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                          <tbody>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>JV ID (System)</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.basicDetails?.jvId || `JV-${selectedJv.id.substring(0, 8).toUpperCase()}`}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>JV Name</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.basicDetails?.jvName || `${selectedJv.projectName} JV`}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Project Name</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.projectName}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Project Code</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.basicDetails?.projectCode || 'PRJ-MOU99'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>JV Type</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right', color: '#059669' }}>{selectedJv.metadata?.basicDetails?.jvType || selectedJv.aiRecommendedModel || 'Revenue Share'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Status</td>
-                              <td style={{ padding: '8px 0', textAlign: 'right' }}>
-                                <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
-                                  {selectedJv.metadata?.basicDetails?.status || 'Active'}
-                                </span>
-                              </td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Start Date</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.basicDetails?.startDate || '2026-08-01'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Expected End Date</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.basicDetails?.endDate || '2030-08-01'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Description</td>
-                              <td style={{ padding: '8px 0', fontSize: '11px', color: '#475569', textAlign: 'right' }}>{selectedJv.metadata?.basicDetails?.description || 'Residential JV deal.'}</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">JV ID (System)</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.basicDetails?.jvId || `JV-${selectedJv.id.substring(0, 8).toUpperCase()}`}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">JV Name</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.basicDetails?.jvName || `${selectedJv.projectName} JV`}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Project Name</span>
+                            <span className="ai-info-value">{selectedJv.projectName}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Project Code</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.basicDetails?.projectCode || 'PRJ-MOU99'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">JV Type</span>
+                            <span className="ai-info-value success">{selectedJv.metadata?.basicDetails?.jvType || selectedJv.aiRecommendedModel || 'Revenue Share'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Status</span>
+                            <span className="ai-info-value">
+                              <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
+                                {selectedJv.metadata?.basicDetails?.status || 'Active'}
+                              </span>
+                            </span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Start Date</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.basicDetails?.startDate || '2026-08-01'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Expected End Date</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.basicDetails?.endDate || '2030-08-01'}</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Description</span>
+                            <span className="ai-info-value" style={{ fontSize: '11px', color: '#475569' }}>{selectedJv.metadata?.basicDetails?.description || 'Residential JV deal.'}</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div className="ai-detail-card">
+                        <h4>
                           <Building size={16} /> 2. Land Information
                         </h4>
-                        <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                          <tbody>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Land Lookup Title</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.land || `Plot for ${selectedJv.projectName}`}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Survey Number</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.surveyNumber || 'SUR-549/2'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Village / Location</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.village || 'Hinjewadi, Pune'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>District</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.district || 'Pune'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>State</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.state || 'Maharashtra'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Land Area</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.landArea || 5} Acres</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Zoning Classification</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.landDetails?.zoning || 'Residential'}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Land Value contribution</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right' }}>₹{selectedJv.landValue.toLocaleString()}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: '8px 0', color: '#64748b' }}>Approved FSI ratio</td>
-                              <td style={{ padding: '8px 0', fontWeight: 'bold', textAlign: 'right', color: '#4f46e5' }}>{selectedJv.metadata?.landDetails?.fsi || 2.5} FSI</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Land Lookup Title</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.land || `Plot for ${selectedJv.projectName}`}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Survey Number</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.surveyNumber || 'SUR-549/2'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Village / Location</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.village || 'Hinjewadi, Pune'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">District</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.district || 'Pune'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">State</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.state || 'Maharashtra'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Land Area</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.landArea || 5} Acres</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Zoning Classification</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.landDetails?.zoning || 'Residential'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Land Value contribution</span>
+                            <span className="ai-info-value">₹{selectedJv.landValue.toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Approved FSI ratio</span>
+                            <span className="ai-info-value" style={{ color: '#4f46e5' }}>{selectedJv.metadata?.landDetails?.fsi || 2.5} FSI</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Financial details section */}
-                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="ai-detail-card">
+                      <h4>
                         <DollarSign size={16} /> 6. Financial Details & Escrow Accounts
                       </h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                        <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                          <tbody>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Land Value</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>₹{selectedJv.landValue.toLocaleString()}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Construction Cost</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>₹{selectedJv.constructionCost.toLocaleString()}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Government Approval Cost</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>₹{(selectedJv.metadata?.financialDetails?.approvalCost || 2000000).toLocaleString()}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Marketing & Launch Cost</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>₹{(selectedJv.metadata?.financialDetails?.marketingCost || 3000000).toLocaleString()}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Miscellaneous Buffer Cost</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>₹{(selectedJv.metadata?.financialDetails?.miscellaneousCost || 5000000).toLocaleString()}</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                      <div className="ai-detail-grid">
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Land Value</span>
+                            <span className="ai-info-value">₹{selectedJv.landValue.toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Construction Cost</span>
+                            <span className="ai-info-value">₹{selectedJv.constructionCost.toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Government Approval Cost</span>
+                            <span className="ai-info-value">₹{(selectedJv.metadata?.financialDetails?.approvalCost || 2000000).toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Marketing & Launch Cost</span>
+                            <span className="ai-info-value">₹{(selectedJv.metadata?.financialDetails?.marketingCost || 3000000).toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Miscellaneous Buffer Cost</span>
+                            <span className="ai-info-value">₹{(selectedJv.metadata?.financialDetails?.miscellaneousCost || 5000000).toLocaleString()}</span>
+                          </div>
+                        </div>
 
-                        <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                          <tbody>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Total Project Cost</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right', color: '#dc2626' }}>₹{(selectedJv.landValue + selectedJv.constructionCost + (selectedJv.metadata?.financialDetails?.approvalCost || 2000000) + (selectedJv.metadata?.financialDetails?.marketingCost || 3000000) + (selectedJv.metadata?.financialDetails?.miscellaneousCost || 5000000)).toLocaleString()}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Estimated Sales Revenue</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right', color: '#059669' }}>₹{(selectedJv.metadata?.financialDetails?.estimatedRevenue || (selectedJv.landValue + selectedJv.constructionCost) * 1.5).toLocaleString()}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Projected Net Profit</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right', color: '#2563eb' }}>₹{(selectedJv.metadata?.financialDetails?.estimatedProfit || 50000000).toLocaleString()}</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Return on Investment (ROI)</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.financialDetails?.roi || 47.6}%</td>
-                            </tr>
-                            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Project Break-even</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.financialDetails?.breakEvenPeriod || 3.5} Years</td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: '6px 0', color: '#64748b' }}>Escrow Bank Partner</td>
-                              <td style={{ padding: '6px 0', fontWeight: 'bold', textAlign: 'right', color: '#4b5563' }}>{selectedJv.metadata?.financialDetails?.escrowBankName || 'HDFC Bank Ltd'} ({selectedJv.metadata?.financialDetails?.escrowAccountNumber || '999888777123'})</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Total Project Cost</span>
+                            <span className="ai-info-value danger">₹{(selectedJv.landValue + selectedJv.constructionCost + (selectedJv.metadata?.financialDetails?.approvalCost || 2000000) + (selectedJv.metadata?.financialDetails?.marketingCost || 3000000) + (selectedJv.metadata?.financialDetails?.miscellaneousCost || 5000000)).toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Estimated Sales Revenue</span>
+                            <span className="ai-info-value success">₹{(selectedJv.metadata?.financialDetails?.estimatedRevenue || (selectedJv.landValue + selectedJv.constructionCost) * 1.5).toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Projected Net Profit</span>
+                            <span className="ai-info-value" style={{ color: '#2563eb' }}>₹{(selectedJv.metadata?.financialDetails?.estimatedProfit || 50000000).toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Return on Investment (ROI)</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.financialDetails?.roi || 47.6}%</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Project Break-even</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.financialDetails?.breakEvenPeriod || 3.5} Years</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Escrow Bank Partner</span>
+                            <span className="ai-info-value" style={{ color: '#4b5563' }}>{selectedJv.metadata?.financialDetails?.escrowBankName || 'HDFC Bank Ltd'} ({selectedJv.metadata?.financialDetails?.escrowAccountNumber || '999888777123'})</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2310,9 +2302,9 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                 {activeTab === 'aiRec' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* Score Cards */}
-                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>📊 11. AI Analysis & 13. Risk Assessment</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                    <div className="ai-detail-card">
+                      <h4 style={{ borderBottom: 'none', paddingBottom: 0 }}>📊 11. AI Analysis & 13. Risk Assessment</h4>
+                      <div className="ai-metric-grid" style={{ marginBottom: '20px', marginTop: '12px' }}>
                         {[
                           { label: 'Overall JV Score', val: selectedJv.metadata?.aiAnalysis?.aiJvScore || 88, color: '#059669' },
                           { label: 'Fairness Score', val: selectedJv.metadata?.aiAnalysis?.fairnessScore || 85, color: '#2563eb' },
@@ -2321,62 +2313,60 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           { label: 'Risk Score (Advisory)', val: selectedJv.metadata?.aiAnalysis?.riskScore || 20, color: '#e11d48' },
                           { label: 'Profitability Score', val: selectedJv.metadata?.aiAnalysis?.profitabilityScore || 92, color: '#16a34a' }
                         ].map((score, index) => (
-                          <div key={index} style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #f1f5f9', textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{score.label}</div>
-                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: score.color, marginTop: '4px' }}>{score.val}<span style={{ fontSize: '12px' }}>/100</span></div>
+                          <div key={index} className="ai-metric-card">
+                            <div className="ai-metric-label">{score.label}</div>
+                            <div className="ai-metric-value" style={{ color: score.color }}>
+                              {score.val}<span className="ai-metric-subtext">/100</span>
+                            </div>
                           </div>
                         ))}
                       </div>
 
                       {/* Risks table */}
-                      <table style={{ width: '100%', fontSize: '12px' }}>
-                        <tbody>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '6px 0' }}>Legal Risk Grade</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#15803d' }}>{selectedJv.metadata?.riskAssessment?.legalRisk || 'Low'}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '6px 0' }}>Financial Risk Grade</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#b45309' }}>{selectedJv.metadata?.riskAssessment?.financialRisk || 'Medium'}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '6px 0' }}>Market Risk Grade</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#b45309' }}>{selectedJv.metadata?.riskAssessment?.marketRisk || 'Medium'}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '6px 0' }}>Execution Risk Grade</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#15803d' }}>{selectedJv.metadata?.riskAssessment?.executionRisk || 'Low'}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '6px 0' }}>Partner Risk Grade</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#15803d' }}>{selectedJv.metadata?.riskAssessment?.partnerRisk || 'Low'}</td>
-                          </tr>
-                          <tr>
-                            <td style={{ color: '#64748b', padding: '6px 0' }}>Overall Joint Venture Risk Rating</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#b45309' }}>{selectedJv.metadata?.riskAssessment?.overallRisk || 'Medium'}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div className="ai-info-list">
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Legal Risk Grade</span>
+                          <span className="ai-info-value success">{selectedJv.metadata?.riskAssessment?.legalRisk || 'Low'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Financial Risk Grade</span>
+                          <span className="ai-info-value warning">{selectedJv.metadata?.riskAssessment?.financialRisk || 'Medium'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Market Risk Grade</span>
+                          <span className="ai-info-value warning">{selectedJv.metadata?.riskAssessment?.marketRisk || 'Medium'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Execution Risk Grade</span>
+                          <span className="ai-info-value success">{selectedJv.metadata?.riskAssessment?.executionRisk || 'Low'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Partner Risk Grade</span>
+                          <span className="ai-info-value success">{selectedJv.metadata?.riskAssessment?.partnerRisk || 'Low'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Overall Joint Venture Risk Rating</span>
+                          <span className="ai-info-value warning" style={{ fontWeight: 'bold' }}>{selectedJv.metadata?.riskAssessment?.overallRisk || 'Medium'}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>💡 12. AI Recommendation details</h4>
-                      <table style={{ width: '100%', fontSize: '12px', marginBottom: '16px' }}>
-                        <tbody>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '8px 0' }}>Recommendation decision</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#2563eb' }}>{selectedJv.metadata?.aiRecommendation?.recommendation || 'Proceed with Review'}</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ color: '#64748b', padding: '8px 0' }}>Suggested JV Model</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.aiRecommendation?.suggestedJvModel || 'Revenue Share'}</td>
-                          </tr>
-                          <tr>
-                            <td style={{ color: '#64748b', padding: '8px 0' }}>Negotiation Scope level</td>
-                            <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#b45309' }}>{selectedJv.metadata?.aiRecommendation?.negotiationScope || 'Medium'}</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <div className="ai-detail-card">
+                      <h4>💡 12. AI Recommendation details</h4>
+                      <div className="ai-info-list" style={{ marginBottom: '16px' }}>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Recommendation decision</span>
+                          <span className="ai-info-value" style={{ color: '#2563eb' }}>{selectedJv.metadata?.aiRecommendation?.recommendation || 'Proceed with Review'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Suggested JV Model</span>
+                          <span className="ai-info-value">{selectedJv.metadata?.aiRecommendation?.suggestedJvModel || 'Revenue Share'}</span>
+                        </div>
+                        <div className="ai-info-row">
+                          <span className="ai-info-label">Negotiation Scope level</span>
+                          <span className="ai-info-value warning">{selectedJv.metadata?.aiRecommendation?.negotiationScope || 'Medium'}</span>
+                        </div>
+                      </div>
 
                       <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '10px' }}>
                         <strong>Missing Clauses:</strong> {(selectedJv.metadata?.aiRecommendation?.missingClauses || ['Force Majeure clauses', 'Arbitration timelines']).map((clause, index) => (

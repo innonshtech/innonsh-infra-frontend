@@ -468,3 +468,123 @@
   font-size: 0.75rem;
   color: var(--text-secondary, #64748b);
 }
+
+/* --- Premium AI Detail Cards --- */
+.ai-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.ai-detail-card {
+  background: #ffffff !important;
+  border: 1px solid var(--border-primary, #e2e8f0) !important;
+  border-radius: 12px !important;
+  padding: 1.25rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01) !important;
+  transition: all 0.2s ease !important;
+}
+.ai-detail-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
+  transform: translateY(-2px) !important;
+}
+
+.ai-detail-card h4 {
+  margin: 0 0 1rem 0 !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  color: var(--accent-primary, #1B5E4F) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  border-bottom: 1.5px solid var(--accent-primary-tint, #E6F4EF) !important;
+  padding-bottom: 0.5rem !important;
+}
+
+/* Premium Key-Value Info List */
+.ai-info-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+}
+
+.ai-info-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 0.5rem 0 !important;
+  border-bottom: 1px solid var(--border-secondary, #f1f5f9) !important;
+}
+.ai-info-row:last-child {
+  border-bottom: none !important;
+}
+
+.ai-info-label {
+  color: var(--text-secondary, #64748b) !important;
+  font-weight: 500 !important;
+  font-size: 11.5px !important;
+}
+
+.ai-info-value {
+  color: var(--text-primary, #1e293b) !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  font-size: 11.5px !important;
+}
+
+.ai-info-value.success {
+  color: var(--accent-success, #059669) !important;
+}
+.ai-info-value.danger {
+  color: var(--accent-danger, #dc2626) !important;
+}
+.ai-info-value.warning {
+  color: var(--accent-warning, #d97706) !important;
+}
+
+/* Score Card Metric Grids */
+.ai-metric-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+.ai-metric-card {
+  background: var(--bg-tertiary, #f8fafc) !important;
+  border: 1px solid var(--border-primary, #e2e8f0) !important;
+  border-radius: 10px !important;
+  padding: 1rem 0.75rem !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01) !important;
+}
+.ai-metric-card:hover {
+  background: #ffffff !important;
+  border-color: var(--accent-primary, #1b5e4f) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 12px rgba(27, 94, 79, 0.06) !important;
+}
+
+.ai-metric-label {
+  font-size: 10px !important;
+  color: var(--text-secondary, #64748b) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.ai-metric-value {
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  gap: 1px !important;
+}
+
+.ai-metric-subtext {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  color: var(--text-muted, #9ca3af) !important;
+}
