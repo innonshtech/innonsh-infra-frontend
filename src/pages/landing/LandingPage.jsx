@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   HardHat, ArrowUpRight, ArrowRight, LayoutGrid, ShieldCheck, Cloud, Users,
@@ -7,7 +7,7 @@ import {
   Layers, Check, Sparkles, MoreHorizontal, IndianRupee, TrendingUp,
   UserCheck, CheckCircle2, Calendar, CircleDot, Search, Filter,
   FileCheck2, Route, LogIn, Rocket, CalendarCheck, MapPin, Mail, Phone,
-  Globe, Share2, ExternalLink
+  Globe, Share2, ExternalLink, Menu, X
 } from 'lucide-react';
 import './LandingPage.css';
 import buildingLogo from '../../assets/Building_logo.png';
@@ -68,6 +68,8 @@ export default function LandingPage() {
    HEADER
    ═══════════════════════════════════════════════════════════════════════════ */
 function Header() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <header className="lp-header">
       <div className="lp-glass lp-header-inner">
@@ -93,9 +95,32 @@ function Header() {
               Request Demo
               <ArrowUpRight size={16} />
             </a>
+            
+            {/* Mobile Menu Toggle Button */}
+            <button 
+              className="lp-mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </nav>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="lp-mobile-menu-overlay lp-glass-strong">
+          <div className="lp-mobile-menu-links">
+            <a href="#modules" onClick={() => setMobileMenuOpen(false)}>Modules</a>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
+            <a href="#how" onClick={() => setMobileMenuOpen(false)}>How it works</a>
+            <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+            <hr className="lp-mobile-menu-divider" />
+            <Link to="/login" className="lp-btn-ghost lp-mobile-menu-signin" onClick={() => setMobileMenuOpen(false)}>Sign in</Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -1749,3 +1749,122 @@
 .lp-fill-emerald { background: #A7F3D0; }
 .lp-fill-indigo { background: #C7D2FE; }
 .lp-fill-teal { background: #99F6E4; }
+
+/* ─── Mobile Responsiveness Enhancements ─────────────────────────────────── */
+
+/* Mobile menu toggle button (hidden on desktop) */
+.lp-mobile-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15,23,42,.1);
+  background: white;
+  color: var(--lp-ink-800);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.lp-mobile-menu-toggle:hover {
+  background: var(--lp-ink-100);
+  border-color: rgba(15,23,42,.2);
+}
+@media (min-width: 768px) {
+  .lp-mobile-menu-toggle {
+    display: none;
+  }
+}
+
+/* Mobile menu overlay */
+.lp-mobile-menu-overlay {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(226,232,240,.6);
+  border-bottom: 1px solid rgba(226,232,240,.8);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,.08);
+  z-index: 49;
+  animation: lp-rise .3s ease both;
+}
+.lp-mobile-menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.lp-mobile-menu-links a {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--lp-ink-800);
+  transition: color 0.2s;
+}
+.lp-mobile-menu-links a:hover {
+  color: var(--lp-indigo-600);
+}
+.lp-mobile-menu-divider {
+  border: none;
+  border-top: 1px solid rgba(15,23,42,.08);
+  margin: 0.25rem 0;
+}
+.lp-mobile-menu-signin {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem !important;
+}
+
+/* Layout adjustments on mobile viewports */
+@media (max-width: 767px) {
+  /* Logo adjustments */
+  .lp-logo-subtitle {
+    display: none; /* Hide subtitle on mobile for less clutter */
+  }
+
+  /* Make sure hero trust badges wrap instead of overflowing horizontally */
+  .lp-hero-trust {
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-start;
+  }
+
+  /* Stack dashboard mock KPI grid vertically */
+  .lp-kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem;
+  }
+
+  /* Stack dashboard mock chart row vertically */
+  .lp-chart-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+  }
+
+  /* Portfolio KPIs on mobile */
+  .lp-portfolio-kpis {
+    grid-template-columns: 1fr 1fr !important; /* 2x2 grid */
+    gap: 0.5rem;
+  }
+
+  /* Donut chart layout on mobile */
+  .lp-donut-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+    justify-items: center;
+  }
+  .lp-breakdown-list {
+    width: 100%;
+  }
+
+  /* Allow cards visual to scale and prevent table overflow */
+  .lp-feature-visual-card {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Responsive font adjustments for headline */
+  .lp-hero-headline {
+    font-size: 2.25rem !important;
+  }
+}
