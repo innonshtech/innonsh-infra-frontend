@@ -23,3 +23,9 @@
   flex: 1;
   overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+  .app-main {
+    margin-left: 0 !important;
+  }
+}

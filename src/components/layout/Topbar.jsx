@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
-import { Search, Bell, ChevronRight, LogOut, AlertTriangle, AlertCircle, Clock, Info, Check, Lock, Eye, EyeOff, X, Sparkles } from 'lucide-react';
+import { Search, Bell, ChevronRight, LogOut, AlertTriangle, AlertCircle, Clock, Info, Check, Lock, Eye, EyeOff, X, Sparkles, Menu } from 'lucide-react';
 import ConfirmModal from '../ui/ConfirmModal';
 import { notificationService, authService, projectService } from '../../services/api';
 import './Topbar.css';
@@ -142,7 +142,7 @@ const searchableTabs = [
   { label: 'WBS Templates (Settings)', path: '/settings/wbs-templates', erp: ['CONTRACTOR', 'BUILDER'] },
 ];
 
-export default function Topbar() {
+export default function Topbar({ toggleMobileSidebar }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, erpType, logout } = useAuth();
@@ -371,6 +371,9 @@ export default function Topbar() {
     <>
       <header className="topbar">
         <div className="topbar-left">
+          <button className="topbar-menu-toggle" onClick={toggleMobileSidebar} aria-label="Toggle Sidebar">
+            <Menu size={20} />
+          </button>
           <h1 className="topbar-title">{pageTitle}</h1>
         </div>
 

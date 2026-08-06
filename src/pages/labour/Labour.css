@@ -843,3 +843,22 @@
   display: flex;
   gap: 8px;
 }
+
+/* --- Mobile Viewport overrides for Labour --- */
+@media (max-width: 768px) {
+  .labour-filter-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .labour-filter-sel {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 120px;
+  }
+  .labour-tab-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    height: auto !important;
+    padding: 6px 12px !important;
+  }
+}

@@ -792,3 +792,38 @@ ul, ol { list-style: none; }
   color: var(--text-secondary);
   margin-top: var(--space-sm);
 }
+
+/* --- Global Mobile UI Responsive Overrides --- */
+
+/* 1. Prevent Wide Tables from Breaking Mobile Page Flow */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-primary);
+}
+
+table {
+  min-width: 500px; /* Force scrollbar inside table container if viewport is too narrow */
+}
+
+/* 2. Prevent Dialog Modals from Overflowing Phones */
+@media (max-width: 480px) {
+  .modal,
+  .modal-container,
+  .confirm-dialog .modal {
+    width: calc(100% - 32px) !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 16px !important;
+  }
+}
+
+/* 3. Global project grid fallback for tiny phone widths */
+@media (max-width: 400px) {
+  .projects-grid {
+    grid-template-columns: 1fr !important; /* Force single column projects grid */
+  }
+}

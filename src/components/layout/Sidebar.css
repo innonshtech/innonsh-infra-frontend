@@ -320,3 +320,54 @@
   display: block;
   opacity: 0.7;
 }
+
+/* --- Mobile Viewport (Drawer Sidebar) --- */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 999;
+    transform: translateX(-100%);
+    width: var(--sidebar-width) !important; /* Lock width on mobile */
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Hide the toggle collapse arrow button on mobile */
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  /* Ensure category headers are visible on mobile */
+  .sidebar-category-header {
+    display: block !important;
+  }
+
+  /* Make links slide layout work without collapses */
+  .sidebar-link span {
+    display: inline !important;
+  }
+
+  .sidebar-user-info,
+  .sidebar-brand-text {
+    display: flex !important;
+  }
+
+  /* Translucent Backdrop Overlay */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 998;
+    animation: fadeIn 0.2s ease-out;
+  }
+}

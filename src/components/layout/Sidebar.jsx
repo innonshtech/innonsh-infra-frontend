@@ -215,7 +215,7 @@ const permissionMapping = {
   }
 };
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const { erpType, user, company, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
@@ -247,7 +247,12 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''}`}>
+      {/* Translucent backdrop overlay for mobile */}
+      {mobileOpen && (
+        <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
+      )}
+
+      <aside className={`sidebar ${collapsed ? 'sidebar-collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
       {/* Brand */}
       <div className="sidebar-brand">
         <div className="sidebar-logo">
@@ -290,6 +295,7 @@ export default function Sidebar() {
                   `sidebar-link ${isActive ? 'active' : ''}`
                 }
                 title={collapsed ? item.label : undefined}
+                onClick={() => setMobileOpen(false)}
               >
                 <item.icon size={20} />
                 {!collapsed && <span>{item.label}</span>}

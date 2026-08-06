@@ -138,3 +138,24 @@
   font-weight: 600;
   min-width: 32px;
 }
+
+/* --- Mobile Viewport (Dashboard Layouts) --- */
+@media (max-width: 1024px) {
+  .dashboard-charts {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr !important;
+  }
+}

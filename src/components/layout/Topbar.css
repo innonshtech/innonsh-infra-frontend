@@ -653,3 +653,62 @@
   top: 18px;
   right: 16px;
 }
+
+/* --- Mobile Viewport (Topbar controls) --- */
+
+/* Sidebar Toggle Menu Button inside Topbar (hidden on desktop) */
+.topbar-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  border: 1px solid var(--border-primary, #e5e7eb);
+  color: var(--text-secondary, #4b5563);
+  cursor: pointer;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+.topbar-menu-toggle:hover {
+  background: var(--bg-hover, #f3f4f6);
+  color: var(--accent-primary, #1b5e4f);
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 12px !important;
+  }
+
+  .topbar-menu-toggle {
+    display: inline-flex;
+  }
+
+  /* Breadcrumb/Subpath - Hide on mobile to save space */
+  .topbar-breadcrumb {
+    display: none !important;
+  }
+
+  /* Search Input collapse into toggle or just scale down width */
+  .topbar-search {
+    min-width: 0 !important;
+    width: 130px !important;
+    padding: 4px 10px !important;
+  }
+  .topbar-search:focus-within {
+    width: 170px !important;
+  }
+  .topbar-search input::placeholder {
+    font-size: 10px;
+  }
+
+  /* Reduce spacing inside Topbar elements */
+  .topbar-right {
+    gap: 8px !important;
+  }
+
+  .topbar-title {
+    font-size: 13px !important;
+  }
+}
