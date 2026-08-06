@@ -1826,10 +1826,10 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                 {/* 2. Partners Tab */}
                 {activeTab === 'partners' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                    <div className="ai-detail-grid">
                       {/* Landowner details */}
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>👤 3. Land Owner / Partner Details</h4>
+                      <div className="ai-detail-card">
+                        <h4>👤 3. Land Owner / Partner Details</h4>
                         {(() => {
                           const details = selectedJv.metadata?.landOwnerDetails;
                           const isArray = Array.isArray(details);
@@ -1849,117 +1849,111 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           return partnersList.map((partner, pIdx) => (
                             <div key={pIdx} style={{ marginBottom: pIdx < partnersList.length - 1 ? '16px' : 0, paddingBottom: pIdx < partnersList.length - 1 ? '16px' : 0, borderBottom: pIdx < partnersList.length - 1 ? '1px dashed #cbd5e1' : 'none' }}>
                               <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>PARTNER #{pIdx + 1}: {partner.name || 'N/A'}</span>
-                              <table style={{ width: '100%', fontSize: '12px' }}>
-                                <tbody>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>Mobile Contact</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{partner.mobile || 'N/A'}</td>
-                                  </tr>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>Contact Email</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{partner.email || 'N/A'}</td>
-                                  </tr>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>Ownership Share</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{partner.ownershipPercentage || 100}%</td>
-                                  </tr>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>PAN Card Ref</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{partner.pan || 'N/A'}</td>
-                                  </tr>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>Aadhaar Card Ref</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{partner.aadhaar || 'N/A'}</td>
-                                  </tr>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>Registered Address</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right', fontSize: '11px' }}>{partner.address || 'N/A'}</td>
-                                  </tr>
-                                  <tr>
-                                    <td style={{ color: '#64748b', padding: '4px 0' }}>Disbursement Bank Details</td>
-                                    <td style={{ fontWeight: 'bold', textAlign: 'right', fontSize: '10px' }}>{partner.bankDetails || 'N/A'}</td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="ai-info-list">
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Mobile Contact</span>
+                                  <span className="ai-info-value">{partner.mobile || 'N/A'}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Contact Email</span>
+                                  <span className="ai-info-value">{partner.email || 'N/A'}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Ownership Share</span>
+                                  <span className="ai-info-value">{partner.ownershipPercentage || 100}%</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">PAN Card Ref</span>
+                                  <span className="ai-info-value">{partner.pan || 'N/A'}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Aadhaar Card Ref</span>
+                                  <span className="ai-info-value">{partner.aadhaar || 'N/A'}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Registered Address</span>
+                                  <span className="ai-info-value" style={{ fontSize: '11px' }}>{partner.address || 'N/A'}</span>
+                                </div>
+                                <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                                  <span className="ai-info-label">Disbursement Bank Details</span>
+                                  <span className="ai-info-value" style={{ fontSize: '10px' }}>{partner.bankDetails || 'N/A'}</span>
+                                </div>
+                              </div>
                             </div>
                           ));
                         })()}
                       </div>
 
                       {/* Builder details */}
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>🏢 4. Builder & Developer Details</h4>
-                        <table style={{ width: '100%', fontSize: '12px' }}>
-                          <tbody>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Developer Company</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.builderName}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Contact Person</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.builderDetails?.contactPerson || 'Vikram Shah'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Mobile Contact</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.builderDetails?.mobile || '9876543211'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Contact Email</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.builderDetails?.email || 'contact@builder.com'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Experience (Real Estate)</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.builderDetails?.experience || 18} Years</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Completed Projects</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.builderDetails?.completedProjects || 42} Projects</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Credit Rating</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#2563eb' }}>{selectedJv.metadata?.builderDetails?.creditRating || 'A+ Rating'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Financial Capacity</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>₹{(selectedJv.metadata?.builderDetails?.financialCapacity || 900000000).toLocaleString()}</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                      <div className="ai-detail-card">
+                        <h4>🏢 4. Builder & Developer Details</h4>
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Developer Company</span>
+                            <span className="ai-info-value">{selectedJv.builderName}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Contact Person</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.builderDetails?.contactPerson || 'Vikram Shah'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Mobile Contact</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.builderDetails?.mobile || '9876543211'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Contact Email</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.builderDetails?.email || 'contact@builder.com'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Experience (Real Estate)</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.builderDetails?.experience || 18} Years</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Completed Projects</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.builderDetails?.completedProjects || 42} Projects</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Credit Rating</span>
+                            <span className="ai-info-value" style={{ color: '#2563eb' }}>{selectedJv.metadata?.builderDetails?.creditRating || 'A+ Rating'}</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Financial Capacity</span>
+                            <span className="ai-info-value">₹{(selectedJv.metadata?.builderDetails?.financialCapacity || 900000000).toLocaleString()}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                    <div className="ai-detail-grid">
                       {/* Investor details & Revenue sharing */}
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>💰 5. Investor Details (Optional)</h4>
-                        <table style={{ width: '100%', fontSize: '12px' }}>
-                          <tbody>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Investor Name</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.investorName || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Investment Amount</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>₹{selectedJv.investorFunds.toLocaleString()}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Expected ROI</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.investorDetails?.expectedRoi || 18.0}%</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Investment Type</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.investorDetails?.investmentType || 'Equity'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Exit Timeline</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.investorDetails?.exitTimeline || 24} Months</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                      <div className="ai-detail-card">
+                        <h4>💰 5. Investor Details (Optional)</h4>
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Investor Name</span>
+                            <span className="ai-info-value">{selectedJv.investorName || 'N/A'}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Investment Amount</span>
+                            <span className="ai-info-value">₹{selectedJv.investorFunds.toLocaleString()}</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Expected ROI</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.investorDetails?.expectedRoi || 18.0}%</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Investment Type</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.investorDetails?.investmentType || 'Equity'}</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Exit Timeline</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.investorDetails?.exitTimeline || 24} Months</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>📊 7. Revenue Sharing & Allocations</h4>
+                      <div className="ai-detail-card">
+                        <h4>📊 7. Revenue Sharing & Allocations</h4>
                         
                         {/* Tri-color profit distribution horizontal bar */}
                         {(() => {
@@ -1996,58 +1990,56 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           );
                         })()}
 
-                        <table style={{ width: '100%', fontSize: '12px' }}>
-                          <tbody>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Builder Share Ratio</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#059669' }}>{selectedJv.metadata?.revenueSharingDetails?.builderShare || 60}%</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Land Owner Share Ratio</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right', color: '#d97706' }}>{selectedJv.metadata?.revenueSharingDetails?.landOwnerShare || 40}%</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Investor Share Ratio</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.revenueSharingDetails?.investorShare || 0}%</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Profit Distribution Type</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.revenueSharingDetails?.profitDistributionType || 'Revenue'}</td>
-                            </tr>
-                            <tr>
-                              <td style={{ color: '#64748b', padding: '6px 0' }}>Disbursement Frequency</td>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right' }}>{selectedJv.metadata?.revenueSharingDetails?.paymentFrequency || 'Quarterly'}</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                        <div className="ai-info-list">
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Builder Share Ratio</span>
+                            <span className="ai-info-value success">{selectedJv.metadata?.revenueSharingDetails?.builderShare || 60}%</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Land Owner Share Ratio</span>
+                            <span className="ai-info-value warning">{selectedJv.metadata?.revenueSharingDetails?.landOwnerShare || 40}%</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Investor Share Ratio</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.revenueSharingDetails?.investorShare || 0}%</span>
+                          </div>
+                          <div className="ai-info-row">
+                            <span className="ai-info-label">Profit Distribution Type</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.revenueSharingDetails?.profitDistributionType || 'Revenue'}</span>
+                          </div>
+                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                            <span className="ai-info-label">Disbursement Frequency</span>
+                            <span className="ai-info-value">{selectedJv.metadata?.revenueSharingDetails?.paymentFrequency || 'Quarterly'}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Partner responsibilities */}
-                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#1e293b', fontWeight: 'bold' }}>🛠️ 8. Partner Responsibilities Matrix</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', fontSize: '11px' }}>
-                        <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div className="ai-detail-card">
+                      <h4 style={{ borderBottom: 'none', paddingBottom: 0 }}>🛠️ 8. Partner Responsibilities Matrix</h4>
+                      <div className="ai-detail-grid" style={{ marginTop: '12px' }}>
+                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                           <span style={{ fontWeight: 'bold', color: '#059669', textTransform: 'uppercase', fontSize: '10px' }}>Builder Responsibilities</span>
                           <ul style={{ paddingLeft: '14px', margin: '6px 0 0 0' }}>
                             {(selectedJv.metadata?.responsibilities?.builder || ["Construction", "Project Management", "Approvals", "Sales"]).map((item, idx) => (
-                              <li key={idx} style={{ margin: '2px 0' }}>✓ {item}</li>
+                              <li key={idx} style={{ margin: '2px 0', fontSize: '11px', color: 'var(--text-secondary)' }}>✓ {item}</li>
                             ))}
                           </ul>
                         </div>
-                        <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                           <span style={{ fontWeight: 'bold', color: '#d97706', textTransform: 'uppercase', fontSize: '10px' }}>Land Owner Responsibilities</span>
                           <ul style={{ paddingLeft: '14px', margin: '6px 0 0 0' }}>
                             {(selectedJv.metadata?.responsibilities?.landOwner || ["Land Contribution", "Clear Title Deeds", "Coordination"]).map((item, idx) => (
-                              <li key={idx} style={{ margin: '2px 0' }}>✓ {item}</li>
+                              <li key={idx} style={{ margin: '2px 0', fontSize: '11px', color: 'var(--text-secondary)' }}>✓ {item}</li>
                             ))}
                           </ul>
                         </div>
-                        <div style={{ background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                           <span style={{ fontWeight: 'bold', color: '#4f46e5', textTransform: 'uppercase', fontSize: '10px' }}>Investor Responsibilities</span>
                           <ul style={{ paddingLeft: '14px', margin: '6px 0 0 0' }}>
                             {(selectedJv.metadata?.responsibilities?.investor || ["Funding Liquidity", "Audit Monitoring"]).map((item, idx) => (
-                              <li key={idx} style={{ margin: '2px 0' }}>✓ {item}</li>
+                              <li key={idx} style={{ margin: '2px 0', fontSize: '11px', color: 'var(--text-secondary)' }}>✓ {item}</li>
                             ))}
                           </ul>
                         </div>
