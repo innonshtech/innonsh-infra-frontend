@@ -159,3 +159,26 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* --- Responsive att-summary-row for Dashboard KPIs --- */
+.att-summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+  .att-summary-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+}
+
+@media (max-width: 580px) {
+  .att-summary-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+}
+

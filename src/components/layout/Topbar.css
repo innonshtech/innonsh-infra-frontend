@@ -717,4 +717,13 @@
     align-items: center !important;
     gap: 8px !important;
   }
+
+  /* Hide username and divider to keep mobile topbar clean and uncluttered */
+  .topbar-user-brief {
+    display: none !important;
+  }
+
+  .topbar-divider {
+    display: none !important;
+  }
 }

@@ -110,7 +110,7 @@ export default function DashboardPage() {
       }
     >
       {/* Stat Cards */}
-      <div className="att-summary-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
+      <div className="att-summary-row">
         {stats.map((stat, i) => (
           <div className="att-kpi" key={i}>
             <div className="att-kpi-val" style={{ color: stat.color }}>{stat.value}</div>
@@ -122,7 +122,7 @@ export default function DashboardPage() {
       {/* Financial KPI Row — NEW */}
       {financeData && erpType !== 'BUILDER' && (
         <>
-          <div className="att-summary-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 20 }}>
+          <div className="att-summary-row">
             <div className="att-kpi" style={{ borderLeft: '3px solid #10b981' }}>
               <div className="att-kpi-val" style={{ color: '#10b981' }}>{formatCurrency(financeData.totalIncome)}</div>
               <div className="att-kpi-lbl">Total Income</div>
@@ -239,33 +239,35 @@ export default function DashboardPage() {
           <span className="card-title">Recent Projects</span>
           <span className="card-action" onClick={() => navigate('/projects')}>View All</span>
         </div>
-        <table className="erp-tbl">
-          <thead>
-            <tr>
-              <th style={{ width: '40%' }}>Project Name</th>
-              <th style={{ width: '20%' }}>Status</th>
-              <th style={{ width: '20%' }}>Budget</th>
-              <th style={{ width: '20%' }}>Members</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentProjects.map((project) => (
-              <tr key={project.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/projects/${project.id}`)}>
-                <td className="prim-cell">{project.name}</td>
-                <td>
-                  <span className={`status-pill ${statusBadgeMap[project.status] || 'p-in'}`}>
-                    {project.status?.replace('_', ' ')}
-                  </span>
-                </td>
-                <td>{formatCurrency(project.budget)}</td>
-                <td>{project._count?.members || 0}</td>
+        <div className="table-responsive">
+          <table className="erp-tbl">
+            <thead>
+              <tr>
+                <th style={{ width: '40%' }}>Project Name</th>
+                <th style={{ width: '20%' }}>Status</th>
+                <th style={{ width: '20%' }}>Budget</th>
+                <th style={{ width: '20%' }}>Members</th>
               </tr>
-            ))}
-            {recentProjects.length === 0 && (
-              <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32 }}>No projects yet.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recentProjects.map((project) => (
+                <tr key={project.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/projects/${project.id}`)}>
+                  <td className="prim-cell">{project.name}</td>
+                  <td>
+                    <span className={`status-pill ${statusBadgeMap[project.status] || 'p-in'}`}>
+                      {project.status?.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td>{formatCurrency(project.budget)}</td>
+                  <td>{project._count?.members || 0}</td>
+                </tr>
+              ))}
+              {recentProjects.length === 0 && (
+                <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32 }}>No projects yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </PageWrapper>
   );
