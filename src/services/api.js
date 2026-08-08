@@ -376,6 +376,7 @@ export const aiService = {
 
   getLandPlots: () => api.get('/ai/land-plots'),
   analyzeLandPlot: (data) => api.post('/ai/land-analysis', data),
+  auditLandDocuments: (data) => api.post('/ai/land-audit', data),
   updateLandPlot: (id, data) => api.put(`/ai/land-plots/${id}`, data),
 
   getJVAgreements: () => api.get('/ai/jv-agreements'),
@@ -392,5 +393,6 @@ export const aiService = {
   generatePropertyPlan: (data) => api.post('/ai/property-planning', data),
 
   getDocumentCatalog: () => api.get('/ai/documents'),
+  saveToVault: (data) => api.post('/ai/documents', data),
   deleteDocument: (id) => api.delete(`/ai/documents/${id}`),
 };

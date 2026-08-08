@@ -10,6 +10,7 @@ export default function DocumentVaultPage() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState('ALL');
+  const [selectedPlotFilter, setSelectedPlotFilter] = useState('ALL');
 
   useEffect(() => {
     fetchDocuments();
@@ -26,6 +27,15 @@ export default function DocumentVaultPage() {
       setLoading(false);
     }
   };
+
+  // Get unique non-empty referenceId values from documents (e.g. plot names)
+  const uniquePlots = Array.from(
+    new Set(
+      documents
+        .map((d) => d.referenceId)
+        .filter((ref) => ref && ref !== 'manual' && ref !== 'CREATE_NEW' && ref.trim() !== '')
+    )
+  );
 
   const getModuleBadgeClass = (moduleName) => {
     switch (moduleName?.toUpperCase()) {
@@ -46,11 +56,13 @@ export default function DocumentVaultPage() {
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch = doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.uploadedBy?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.documentType?.toLowerCase().includes(searchQuery.toLowerCase());
+      doc.documentType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.referenceId?.toLowerCase().includes(searchQuery.toLowerCase());
       
     const matchesModule = selectedModule === 'ALL' || doc.module?.toUpperCase() === selectedModule;
+    const matchesPlot = selectedPlotFilter === 'ALL' || doc.referenceId === selectedPlotFilter;
     
-    return matchesSearch && matchesModule;
+    return matchesSearch && matchesModule && matchesPlot;
   });
 
   const handleDownload = (doc) => {
@@ -119,20 +131,50 @@ export default function DocumentVaultPage() {
               />
             </div>
 
-            {/* Filter */}
-            <div className="flex items-center gap-md" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <Filter className="text-slate-400" size={18} />
-              <div className="flex gap-sm w-full" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {['ALL', 'LAND', 'JV', 'FEASIBILITY', 'APPROVAL'].map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setSelectedModule(m)}
-                    className={`btn btn-sm ${selectedModule === m ? 'btn-primary' : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'}`}
-                    style={{ fontSize: '11px', padding: '6px 12px' }}
-                  >
-                    {m}
-                  </button>
-                ))}
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', gridColumn: 'span 2' }}>
+              {/* Module Filter Buttons */}
+              <div className="flex items-center gap-sm" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <Filter className="text-slate-400" size={16} />
+                <div className="flex gap-xs" style={{ display: 'flex', gap: '4px' }}>
+                  {['ALL', 'LAND', 'JV', 'FEASIBILITY', 'APPROVAL'].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setSelectedModule(m)}
+                      className={`btn btn-sm ${selectedModule === m ? 'btn-primary' : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                      style={{ fontSize: '11px', padding: '6px 12px' }}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Plot Filter Dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>Filter by Plot:</span>
+                <select
+                  value={selectedPlotFilter}
+                  onChange={(e) => setSelectedPlotFilter(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: '12px',
+                    color: '#334155',
+                    background: '#fff',
+                    outline: 'none',
+                    minWidth: '180px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="ALL">All Plots / References</option>
+                  {uniquePlots.map((plot) => (
+                    <option key={plot} value={plot}>
+                      📍 {plot}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -183,9 +225,11 @@ export default function DocumentVaultPage() {
                         </span>
                       </td>
                       <td>
-                        <code className="text-[10px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded font-mono">
-                          {doc.referenceId?.substring(0, 8)}...
-                        </code>
+                        <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 'bold' }}>
+                          {doc.referenceId && doc.referenceId.length > 20 && !doc.referenceId.includes(' ')
+                            ? `${doc.referenceId.substring(0, 8)}...`
+                            : doc.referenceId || 'N/A'}
+                        </span>
                       </td>
                       <td>
                         <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-1 py-0.5 rounded">

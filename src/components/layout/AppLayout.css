@@ -27,5 +27,17 @@
 @media (max-width: 768px) {
   .app-main {
     margin-left: 0 !important;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Prevent page-level horizontal scroll on mobile */
+  .app-layout {
+    overflow-x: hidden;
+  }
+
+  /* Content area full width */
+  .app-content {
+    overflow-x: hidden;
   }
 }

@@ -588,3 +588,127 @@
   font-weight: 500 !important;
   color: var(--text-muted, #9ca3af) !important;
 }
+
+
+/* ═══════════════════════════════════════════════════
+   MOBILE RESPONSIVE — AI MODULE PAGES
+   Applies to: LandPlotPage, PropertyPlanning, AiBoard
+   All changes scoped to ≤768px / ≤480px only
+   Laptop layout is completely untouched.
+═══════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* ── Page Container ── */
+  .ai-page-container {
+    padding: 12px;
+  }
+
+  /* ── Header ── */
+  .ai-title {
+    font-size: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .ai-subtitle {
+    font-size: 0.8rem;
+  }
+
+  /* ── Grid layouts → single column ── */
+  .ai-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Metric cards → 2 per row ── */
+  .ai-metric-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ── Info rows → stack label/value on very small ── */
+  .ai-info-row {
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .ai-info-value {
+    text-align: left !important;
+  }
+
+  /* ── Detail cards ── */
+  .ai-detail-card {
+    padding: 1rem !important;
+  }
+
+  /* ── Kanban board ── */
+  .ai-kanban-board {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Cards ── */
+  .ai-card-header {
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ai-card-body {
+    padding: 1rem;
+  }
+
+  /* ── Inventory table: horizontal scroll wrapper ── */
+  .ai-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Buttons: better touch targets ── */
+  .btn {
+    min-height: 42px;
+  }
+
+  /* ── Highlight box ── */
+  .ai-highlight-box {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+
+  /* ── Even tighter padding ── */
+  .ai-page-container {
+    padding: 8px;
+  }
+
+  /* ── Header ── */
+  .ai-title {
+    font-size: 1.1rem;
+  }
+
+  /* ── Metric cards → 1 per row ── */
+  .ai-metric-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .ai-metric-value {
+    font-size: 1.2rem !important;
+  }
+
+  /* ── Detail cards tighter ── */
+  .ai-detail-card {
+    padding: 0.75rem !important;
+  }
+  .ai-detail-card h4 {
+    font-size: 0.8rem !important;
+  }
+
+  /* ── Card body ── */
+  .ai-card-body {
+    padding: 0.75rem;
+  }
+  .ai-card-header {
+    padding: 0.75rem;
+  }
+}

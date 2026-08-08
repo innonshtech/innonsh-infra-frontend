@@ -6,7 +6,7 @@ import {
   Package, IndianRupee, Building2, Grid3X3, BookOpen,
   FileText, Users, Users2, Scale, ClipboardList, BarChart3,
   Settings, ChevronLeft, ChevronRight, HardHat, LogOut, Wrench, Bell, Sparkles, X,
-  Map as MapIcon, Handshake, FileCheck, FilePieChart
+  Map as MapIcon, Handshake, FileCheck, FilePieChart, ShieldCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import './Sidebar.css';
@@ -24,7 +24,8 @@ const contractorMenu = [
   {
     title: 'AI Planning Suite',
     links: [
-      { label: 'AI Land Bank', icon: MapIcon, path: '/ai/land' },
+      { label: 'AI Document Analysis', icon: ShieldCheck, path: '/ai/land?step=4' },
+      { label: 'AI Land Intelligence', icon: MapIcon, path: '/ai/land?step=5' },
       { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
       { label: 'AI Feasibility', icon: FilePieChart, path: '/ai/feasibility' },
       { label: 'AI Approvals', icon: FileCheck, path: '/ai/approvals' },
@@ -71,7 +72,8 @@ const builderMenu = [
   {
     title: 'AI Planning Suite',
     links: [
-      { label: 'AI Land Bank', icon: MapIcon, path: '/ai/land' },
+      { label: 'AI Document Analysis', icon: ShieldCheck, path: '/ai/land?step=4' },
+      { label: 'AI Land Intelligence', icon: MapIcon, path: '/ai/land?step=5' },
       { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
       { label: 'AI Feasibility', icon: FilePieChart, path: '/ai/feasibility' },
       { label: 'AI Approvals', icon: FileCheck, path: '/ai/approvals' },
@@ -233,7 +235,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
   // Filter sidebar tabs dynamically based on user role and permissions!
   const filteredCategories = categories.map(cat => {
     const filteredLinks = cat.links.filter(item => {
-      const checker = permissionMapping[item.path];
+      const pathPart = item.path.split('?')[0];
+      const checker = permissionMapping[pathPart];
       if (checker) {
         return checker(user);
       }
@@ -296,23 +299,30 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                 {category.title}
               </span>
             )}
-            {category.links.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `sidebar-link ${isActive ? 'active' : ''}`
-                }
-                title={collapsed ? item.label : undefined}
-                onClick={() => setMobileOpen(false)}
-              >
-                <item.icon size={20} />
-                {!collapsed && <span>{item.label}</span>}
-                {location.pathname === item.path && (
-                  <div className="sidebar-active-indicator" />
-                )}
-              </NavLink>
-            ))}
+            {category.links.map((item) => {
+              const pathPart = item.path.split('?')[0];
+              const queryPart = item.path.includes('?') ? '?' + item.path.split('?')[1] : '';
+              const isActive = location.pathname === pathPart && (
+                queryPart === '' || 
+                location.search === queryPart ||
+                (location.search === '' && queryPart === '?step=4')
+              );
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={`sidebar-link ${isActive ? 'active' : ''}`}
+                  title={collapsed ? item.label : undefined}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <item.icon size={20} />
+                  {!collapsed && <span>{item.label}</span>}
+                  {isActive && (
+                    <div className="sidebar-active-indicator" />
+                  )}
+                </NavLink>
+              );
+            })}
           </div>
         ))}
       </nav>

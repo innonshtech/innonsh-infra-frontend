@@ -13,6 +13,10 @@
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02);
+  /* Prevent sidebar from scaling with page pinch-zoom on mobile */
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .sidebar-collapsed {
