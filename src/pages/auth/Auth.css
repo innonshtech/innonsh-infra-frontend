@@ -270,3 +270,32 @@
   color: var(--text-muted);
   margin-top: 2px;
 }
+
+/* --- Mobile Viewport Responsiveness --- */
+@media (max-width: 768px) {
+  .auth-page {
+    padding: var(--space-md);
+  }
+
+  .auth-container {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+  }
+
+  /* Hide decorative side panel on mobile devices */
+  .auth-side {
+    display: none;
+  }
+
+  .auth-card {
+    padding: 24px;
+    min-width: 0;
+  }
+
+  /* Stack input form rows in register pages */
+  .auth-form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
