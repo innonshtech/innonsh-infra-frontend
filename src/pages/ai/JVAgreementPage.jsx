@@ -46,6 +46,18 @@ function formatMarkdown(text) {
   });
 }
 
+function renderCostHelper(val) {
+  if (!val || isNaN(val)) return null;
+  const num = Number(val);
+  if (num >= 10000000) {
+    return <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600', marginTop: '3px', display: 'block' }}>≈ ₹{(num / 10000000).toFixed(2)} Crore</span>;
+  }
+  if (num >= 100000) {
+    return <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600', marginTop: '3px', display: 'block' }}>≈ ₹{(num / 100000).toFixed(2)} Lakh</span>;
+  }
+  return <span style={{ fontSize: '9px', color: '#64748b', marginTop: '3px', display: 'block' }}>₹{num.toLocaleString('en-IN')}</span>;
+}
+
 export default function JVAgreementPage() {
   const toast = useToast();
   const navigate = useNavigate();
@@ -105,8 +117,29 @@ export default function JVAgreementPage() {
 
   // Main tabs selection
   const [activeMainTab, setActiveMainTab] = useState('calculate'); // 'calculate' or 'history'
-  // Form wizard tab selection
-  const [formTab, setFormTab] = useState('basic');
+  const [formTab, setFormTab] = useState('model');
+
+  // New JV Scenarios custom inputs & ledgers
+  const [expectedRevenue, setExpectedRevenue] = useState('');
+  const [totalSaleableArea, setTotalSaleableArea] = useState('');
+  const [minGuarantee, setMinGuarantee] = useState('');
+  const [profitSharePct, setProfitSharePct] = useState('');
+  const [actualConstructionCost, setActualConstructionCost] = useState('');
+  const [unitsAllocatedList, setUnitsAllocatedList] = useState([]);
+  const [aiComparison, setAiComparison] = useState(null);
+
+  // Gap 5: Tower/Floor unit configuration for Area Sharing ledger
+  const [numTowers, setNumTowers] = useState('2');
+  const [numFloors, setNumFloors] = useState('3');
+  const [numUnitsPerFloor, setNumUnitsPerFloor] = useState('4');
+
+  // Gap 8: Terms & Responsibilities capture
+  const defaultBuilderResp = ['Construction & Architecture', 'Government Approvals & RERA', 'Contractor & Labour Management', 'Marketing & Sales', 'Project Management', 'Utility Connections'];
+  const defaultOwnerResp = ['Land Title Clearance', 'Cooperation for Approvals & NOC', 'No Encumbrance on Land', 'Handover of Possession', 'Payment of Property Tax till Handover'];
+  const [builderResponsibilities, setBuilderResponsibilities] = useState(defaultBuilderResp);
+  const [ownerResponsibilities, setOwnerResponsibilities] = useState(defaultOwnerResp);
+  const [builderRespCustom, setBuilderRespCustom] = useState('');
+  const [ownerRespCustom, setOwnerRespCustom] = useState('');
 
   // Extended Input Form states
   // 1. Basic & Land
@@ -180,6 +213,26 @@ export default function JVAgreementPage() {
 
   useEffect(() => {
     fetchAgreements();
+  }, []);
+
+  useEffect(() => {
+    if (selectedJv?.metadata?.aiComparison) {
+      setAiComparison(selectedJv.metadata.aiComparison);
+    } else {
+      setAiComparison(null);
+    }
+  }, [selectedJv?.id]);
+
+  useEffect(() => {
+    const mockUnits = [
+      'A-101', 'A-102', 'A-103', 'A-104',
+      'A-201', 'A-202', 'A-203', 'A-204',
+      'A-301', 'A-302', 'A-303', 'A-304',
+      'B-101', 'B-102', 'B-103', 'B-104',
+      'B-201', 'B-202', 'B-203', 'B-204',
+      'B-301', 'B-302', 'B-303', 'B-304'
+    ];
+    setUnitsAllocatedList(mockUnits.map(unitNo => ({ unitNo, owner: 'Builder' })));
   }, []);
 
   const fetchAgreements = async () => {
@@ -294,7 +347,13 @@ export default function JVAgreementPage() {
             marketingCost: marketingCost ? Number(marketingCost) : undefined,
             miscellaneousCost: miscCost ? Number(miscCost) : undefined,
             escrowBankName: escrowBank || undefined,
-            escrowAccountNumber: escrowAccount || undefined
+            escrowAccountNumber: escrowAccount || undefined,
+            expectedRevenue: expectedRevenue ? Number(expectedRevenue) : undefined,
+            totalSaleableArea: totalSaleableArea ? Number(totalSaleableArea) : undefined,
+            minGuarantee: minGuarantee ? Number(minGuarantee) : undefined,
+            profitSharePct: profitSharePct ? Number(profitSharePct) : undefined,
+            actualConstructionCost: actualConstructionCost ? Number(actualConstructionCost) : undefined,
+            unitsAllocatedList
           },
           revenueSharingDetails: {
             builderShare: builderSharePct ? Number(builderSharePct) : undefined,
@@ -322,6 +381,10 @@ export default function JVAgreementPage() {
             poa: docPoa,
             noc: docNoc,
             taxReceipt: docTaxReceipt
+          },
+          responsibilities: {
+            builder: builderResponsibilities,
+            landOwner: ownerResponsibilities
           }
         }
       };
@@ -346,11 +409,22 @@ export default function JVAgreementPage() {
       setProjectId('');
       setLandId('');
       setLandAreaUnit('acres');
+      setExpectedRevenue('');
+      setTotalSaleableArea('');
+      setMinGuarantee('');
+      setProfitSharePct('');
+      setActualConstructionCost('');
+      setUnitsAllocatedList([]);
 
       // Refresh list
       const updatedJvs = [data.data, ...agreements];
       setAgreements(updatedJvs);
       setSelectedJv(data.data);
+      if (data.data?.metadata?.aiComparison) {
+        setAiComparison(data.data.metadata.aiComparison);
+      } else {
+        setAiComparison(null);
+      }
       setActiveMainTab('history');
     } catch (err) {
       console.error(err);
@@ -436,6 +510,111 @@ export default function JVAgreementPage() {
       console.error(err);
       toast.error('Failed to update deed checks.');
     }
+  };
+
+  const handleLoadAmendment = () => {
+    if (!selectedJv) return;
+    const metadata = selectedJv.metadata || {};
+    
+    // Load state
+    setProjectName(selectedJv.projectName || '');
+    setProjectId(selectedJv.projectId || '');
+    setLandId(selectedJv.landId || '');
+    setLandOwnerName(selectedJv.landOwnerName || '');
+    setBuilderName(selectedJv.builderName || '');
+    setInvestorName(selectedJv.investorName || '');
+    setLandValue(selectedJv.landValue ? String(selectedJv.landValue) : '');
+    setConstructionCost(selectedJv.constructionCost ? String(selectedJv.constructionCost) : '');
+    setInvestorFunds(selectedJv.investorFunds ? String(selectedJv.investorFunds) : '');
+    setLandOwnerTerms(selectedJv.landOwnerTerms || '');
+    setBuilderTerms(selectedJv.builderTerms || '');
+    setInvestorTerms(selectedJv.investorTerms || '');
+    setTermSheet(selectedJv.termSheet || null);
+
+    setJvType(metadata.basicDetails?.jvType || 'Revenue Share');
+    setJvStatus(metadata.basicDetails?.status || 'Active');
+    setStartDate(metadata.basicDetails?.startDate || '');
+    setEndDate(metadata.basicDetails?.endDate || '');
+    setDescription(metadata.basicDetails?.description || '');
+    setReraNumber(metadata.basicDetails?.reraNumber || '');
+
+    setSurveyNumber(metadata.landDetails?.surveyNumber || '');
+    setVillage(metadata.landDetails?.village || '');
+    setDistrict(metadata.landDetails?.district || '');
+    setStateName(metadata.landDetails?.state || '');
+    setLandArea(metadata.landDetails?.landArea ? String(metadata.landDetails.landArea) : '');
+    setLandAreaUnit(metadata.landDetails?.landAreaUnit || 'sqft');
+    setZoning(metadata.landDetails?.zoning || 'Residential');
+    setFsi(metadata.landDetails?.fsi ? String(metadata.landDetails.fsi) : '');
+
+    if (metadata.landOwnerDetails) {
+      setLandowners(metadata.landOwnerDetails.map(o => ({
+        name: o.name || '',
+        share: o.ownershipPercentage ? String(o.ownershipPercentage) : '100',
+        mobile: o.mobile || '',
+        email: o.email || '',
+        pan: o.pan || '',
+        aadhaar: o.aadhaar || '',
+        address: o.address || '',
+        bank: o.bankDetails || ''
+      })));
+    }
+
+    setBuilderContact(metadata.builderDetails?.contactPerson || '');
+    setBuilderMobile(metadata.builderDetails?.mobile || '');
+    setBuilderEmail(metadata.builderDetails?.email || '');
+    setBuilderExperience(metadata.builderDetails?.experience ? String(metadata.builderDetails.experience) : '');
+    setBuilderCompleted(metadata.builderDetails?.completedProjects ? String(metadata.builderDetails.completedProjects) : '');
+    setBuilderRating(metadata.builderDetails?.creditRating || '');
+    setBuilderCapacity(metadata.builderDetails?.financialCapacity ? String(metadata.builderDetails.financialCapacity) : '');
+
+    setInvestorRoi(metadata.investorDetails?.expectedRoi ? String(metadata.investorDetails.expectedRoi) : '');
+    setInvestorType(metadata.investorDetails?.investmentType || '');
+    setInvestorExit(metadata.investorDetails?.exitTimeline ? String(metadata.investorDetails.exitTimeline) : '');
+
+    setApprovalCost(metadata.financialDetails?.approvalCost ? String(metadata.financialDetails.approvalCost) : '');
+    setMarketingCost(metadata.financialDetails?.marketingCost ? String(metadata.financialDetails.marketingCost) : '');
+    setMiscCost(metadata.financialDetails?.miscellaneousCost ? String(metadata.financialDetails.miscellaneousCost) : '');
+    setEscrowBank(metadata.financialDetails?.escrowBankName || '');
+    setEscrowAccount(metadata.financialDetails?.escrowAccountNumber || '');
+    setExpectedRevenue(metadata.financialDetails?.expectedRevenue ? String(metadata.financialDetails.expectedRevenue) : '');
+    setTotalSaleableArea(metadata.financialDetails?.totalSaleableArea ? String(metadata.financialDetails.totalSaleableArea) : '');
+    setMinGuarantee(metadata.financialDetails?.minGuarantee ? String(metadata.financialDetails.minGuarantee) : '');
+    setProfitSharePct(metadata.financialDetails?.profitSharePct ? String(metadata.financialDetails.profitSharePct) : '');
+    setActualConstructionCost(metadata.financialDetails?.actualConstructionCost ? String(metadata.financialDetails.actualConstructionCost) : '');
+    setUnitsAllocatedList(metadata.financialDetails?.unitsAllocatedList || []);
+
+    setBuilderSharePct(metadata.revenueSharingDetails?.builderShare ? String(metadata.revenueSharingDetails.builderShare) : '');
+    setOwnerSharePct(metadata.revenueSharingDetails?.landOwnerShare ? String(metadata.revenueSharingDetails.landOwnerShare) : '');
+    setInvestorSharePct(metadata.revenueSharingDetails?.investorShare ? String(metadata.revenueSharingDetails.investorShare) : '');
+    setDistributionType(metadata.revenueSharingDetails?.profitDistributionType || 'Revenue Share');
+    setPaymentFrequency(metadata.revenueSharingDetails?.paymentFrequency || 'Quarterly');
+    setOwnerAllocatedUnits(metadata.revenueSharingDetails?.ownerAllocatedUnits || '');
+    setBuilderAllocatedUnits(metadata.revenueSharingDetails?.builderAllocatedUnits || '');
+
+    if (metadata.responsibilities?.builder) setBuilderResponsibilities(metadata.responsibilities.builder);
+    if (metadata.responsibilities?.landOwner) setOwnerResponsibilities(metadata.responsibilities.landOwner);
+
+    setAgreementNumber(metadata.agreementDetails?.agreementNumber || '');
+    setAgreementDate(metadata.agreementDetails?.agreementDate || '');
+    setValidTill(metadata.agreementDetails?.validTill || '');
+    setStampPayer(metadata.agreementDetails?.stampDutyPayer || '');
+    setStampAmount(metadata.agreementDetails?.stampDutyAmount ? String(metadata.agreementDetails.stampDutyAmount) : '');
+    setArbitrationSeat(metadata.agreementDetails?.arbitrationSeat || '');
+    setGoverningJurisdiction(metadata.agreementDetails?.governingJurisdiction || '');
+
+    setDocSaleDeed(metadata.legalChecklist?.saleDeed || false);
+    setDocSevenTwelve(metadata.legalChecklist?.sevenTwelve || false);
+    setDocEc(metadata.legalChecklist?.ec || false);
+    setDocTitleReport(metadata.legalChecklist?.titleReport || false);
+    setDocPoa(metadata.legalChecklist?.poa || false);
+    setDocNoc(metadata.legalChecklist?.noc || false);
+    setDocTaxReceipt(metadata.legalChecklist?.taxReceipt || false);
+
+    // Switch view back to editor calculate tab
+    setActiveMainTab('calculate');
+    setFormTab('shares'); // Direct them straight to the commercial shares tab!
+    toast.success('Loaded agreement parameters into editor! Tweak any values and run AI analysis again.');
   };
 
   const handleStartChat = async () => {
@@ -551,11 +730,12 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
             {/* Sub-tabs header for create form */}
             <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '20px', gap: '4px', overflowX: 'auto', background: '#f8fafc', padding: '6px', borderRadius: '8px' }}>
               {[
-                { id: 'basic', label: '1. Basic & Land', icon: <Building size={14} /> },
-                { id: 'partners', label: '2. Partner Details', icon: <Handshake size={14} /> },
-                { id: 'shares', label: '3. Shares & Investor', icon: <Coins size={14} /> },
-                { id: 'legality', label: '4. Escrow & Agreement', icon: <Scale size={14} /> },
-                { id: 'advisory', label: '5. Chatbox & Submit', icon: <Sparkles size={14} /> }
+                { id: 'model', label: '1. Select JV Model', icon: <Sliders size={14} /> },
+                { id: 'basic', label: '2. Basic & Land', icon: <Building size={14} /> },
+                { id: 'partners', label: '3. Partner Details', icon: <Handshake size={14} /> },
+                { id: 'shares', label: '4. Shares & Ledger', icon: <Coins size={14} /> },
+                { id: 'legality', label: '5. Escrow & Agreement', icon: <Scale size={14} /> },
+                { id: 'advisory', label: '6. AI Analysis & Submit', icon: <Sparkles size={14} /> }
               ].map(tab => (
                 <button
                   type="button"
@@ -584,7 +764,100 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
             </div>
 
             <form onSubmit={handleSubmit}>
-              
+
+              {/* Form Tab 0: Select JV Model */}
+              {formTab === 'model' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div style={{ textSelf: 'center', textAlign: 'center', marginBottom: '10px' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b' }}>Select Your Joint Venture (JV) Partnership Model</h3>
+                    <p style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px' }}>Choose the business scenario that matches your legal and financial structure.</p>
+                  </div>
+
+                  <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                    {[
+                      {
+                        type: 'Revenue Share',
+                        title: 'Revenue Sharing JV',
+                        desc: 'Landowner provides land, Builder develops the property. Sales revenue is split based on a percentage agreement.',
+                        metrics: 'Best When: Strong sales market & high valuation',
+                        badge: 'Popular'
+                      },
+                      {
+                        type: 'Area Share',
+                        title: 'Area / Built-Up Sharing JV',
+                        desc: 'Landowner receives a fixed percentage of physical developed area/units. Ideal for holding property assets.',
+                        metrics: 'Best When: Landowner wants property instead of cash',
+                        badge: 'Asset-Heavy'
+                      },
+                      {
+                        type: 'Profit Share',
+                        title: 'Profit Sharing JV',
+                        desc: 'Parties divide the actual project profit after deduction of construction and municipal approval costs.',
+                        metrics: 'Best When: Both parties want to share budget risks',
+                        badge: 'Balanced Risk'
+                      },
+                      {
+                        type: 'Hybrid',
+                        title: 'Hybrid JV (Guarantee + Upside)',
+                        desc: 'Landowner gets a fixed minimum guarantee plus a smaller percentage of project profits.',
+                        metrics: 'Best When: Landowner wants guaranteed protection',
+                        badge: 'Low Downside'
+                      }
+                    ].map((model) => (
+                      <div
+                        key={model.type}
+                        onClick={() => {
+                          setJvType(model.type);
+                          setDistributionType(model.type);
+                          setFormTab('basic');
+                        }}
+                        style={{
+                          border: jvType === model.type ? '2px solid #059669' : '1px solid #e2e8f0',
+                          background: jvType === model.type ? 'rgba(5, 150, 105, 0.02)' : '#ffffff',
+                          borderRadius: '12px',
+                          padding: '20px',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          transition: 'all 0.25s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px'
+                        }}
+                        className="premium-section-card"
+                      >
+                        {model.badge && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '12px',
+                            right: '12px',
+                            fontSize: '9px',
+                            fontWeight: 'bold',
+                            padding: '2px 8px',
+                            borderRadius: '20px',
+                            background: jvType === model.type ? '#059669' : '#f1f5f9',
+                            color: jvType === model.type ? '#ffffff' : '#64748b'
+                          }}>
+                            {model.badge}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '13px', fontWeight: '700', color: jvType === model.type ? '#059669' : '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Handshake size={14} />
+                          {model.title}
+                        </h4>
+                        <p style={{ fontSize: '11px', color: '#64748b', lineHeight: '1.5' }}>{model.desc}</p>
+                        <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #f1f5f9', fontSize: '9.5px', fontWeight: '600', color: '#059669' }}>
+                          {model.metrics}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => setFormTab('basic')}>Next: Basic & Land Details →</button>
+                  </div>
+                </div>
+              )}
+
               {/* Form Tab 1: Basic & Land Info */}
               {formTab === 'basic' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -653,13 +926,14 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
 
                   <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
                     <div className="ai-form-group">
-                      <label className="ai-label">JV Type</label>
-                      <select className="ai-input" value={jvType} onChange={(e) => setJvType(e.target.value)}>
-                        <option value="Revenue Share">Revenue Share</option>
-                        <option value="Area Share">Area Share</option>
-                        <option value="Profit Share">Profit Share</option>
-                        <option value="Fixed Consideration">Fixed Consideration</option>
-                      </select>
+                      <label className="ai-label">Active JV Model</label>
+                      <input
+                        type="text"
+                        className="ai-input"
+                        style={{ background: '#f1f5f9', fontWeight: 'bold', color: '#059669' }}
+                        value={jvType}
+                        readOnly
+                      />
                     </div>
                     <div className="ai-form-group">
                       <label className="ai-label">JV Status</label>
@@ -931,11 +1205,11 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                             />
                           </div>
                           <div className="ai-form-group">
-                            <label className="ai-label">Ownership Share %</label>
+                            <label className="ai-label">Land Title Ownership Share (%)</label>
                             <input
                               type="number"
                               className="ai-input"
-                              placeholder="e.g. 50"
+                              placeholder="e.g. 100"
                               value={owner.share}
                               onChange={(e) => {
                                 const val = e.target.value;
@@ -1087,6 +1361,7 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           value={investorFunds}
                           onChange={(e) => setInvestorFunds(e.target.value)}
                         />
+                        {renderCostHelper(investorFunds)}
                       </div>
                     </div>
 
@@ -1136,85 +1411,738 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
               {formTab === 'shares' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   
-                  {/* Revenue Sharing Ratio */}
-                  <div style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px', background: '#fafafa' }}>
-                    <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 12px 0', textTransform: 'uppercase', color: '#1e293b' }}>📊 7. Revenue Sharing & Allocation Matrix</h3>
-                    <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: '12px' }}>
+                  {/* Model Heading */}
+                  <div style={{ padding: '12px 16px', background: 'rgba(5, 150, 105, 0.05)', borderRadius: '8px', borderLeft: '4px solid #059669', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active JV Partnership Model</span>
+                      <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: '2px 0 0 0' }}>
+                        {jvType === 'Revenue Share' && '📈 Revenue Sharing JV'}
+                        {jvType === 'Area Share' && '🏢 Area / Built-up Sharing JV'}
+                        {jvType === 'Profit Share' && '⚖️ Profit Sharing JV'}
+                        {jvType === 'Hybrid' && '💎 Hybrid JV (Guarantee + Share)'}
+                      </h4>
+                    </div>
+                    <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '10px' }} onClick={() => setFormTab('model')}>Change Model</button>
+                  </div>
+
+                  {/* ── CORE PROJECT FINANCIALS (Always Visible — Gap Fix 1, 3, 4) ── */}
+                  <div style={{ border: '1px solid #dbeafe', padding: '16px', borderRadius: '10px', background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '14px' }}>🏗️</span>
+                      <h3 style={{ fontSize: '11px', fontWeight: '700', margin: '0', textTransform: 'uppercase', color: '#1e40af', letterSpacing: '0.05em' }}>Core Project Financials</h3>
+                      <span style={{ fontSize: '9px', background: '#dbeafe', color: '#1e40af', padding: '1px 7px', borderRadius: '20px', fontWeight: '600' }}>Required for AI Analysis</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
                       <div className="ai-form-group">
-                        <label className="ai-label">Builder Allocation %</label>
+                        <label className="ai-label">🏷️ Land Value (₹)</label>
                         <input
                           type="number"
                           className="ai-input"
-                          placeholder="e.g. 60"
-                          value={builderSharePct}
-                          onChange={(e) => setBuilderSharePct(e.target.value)}
+                          placeholder="e.g. 250000000 (25 Cr)"
+                          value={landValue}
+                          onChange={(e) => setLandValue(e.target.value)}
                         />
+                        {landValue && <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600', marginTop: '3px', display: 'block' }}>≈ ₹{(Number(landValue) / 10000000).toFixed(2)} Crore</span>}
                       </div>
                       <div className="ai-form-group">
-                        <label className="ai-label">Land Owner Allocation %</label>
+                        <label className="ai-label">🔨 Total Construction Cost (₹)</label>
                         <input
                           type="number"
                           className="ai-input"
-                          placeholder="e.g. 40"
-                          value={ownerSharePct}
-                          onChange={(e) => setOwnerSharePct(e.target.value)}
+                          placeholder="e.g. 700000000 (70 Cr)"
+                          value={constructionCost}
+                          onChange={(e) => setConstructionCost(e.target.value)}
                         />
+                        {constructionCost && <span style={{ fontSize: '9px', color: '#059669', fontWeight: '600', marginTop: '3px', display: 'block' }}>≈ ₹{(Number(constructionCost) / 10000000).toFixed(2)} Crore</span>}
+                      </div>
+                    </div>
+                    {landValue && constructionCost && (
+                      <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(5,150,105,0.06)', borderRadius: '6px', fontSize: '10.5px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                        <span>📌 <strong>Total Capital Deployed:</strong> ₹{((Number(landValue) + Number(constructionCost)) / 10000000).toFixed(2)} Cr</span>
+                        <span>🏷️ Land = <strong>{((Number(landValue) / (Number(landValue) + Number(constructionCost))) * 100).toFixed(1)}%</strong> of total</span>
+                        <span>🔨 Construction = <strong>{((Number(constructionCost) / (Number(landValue) + Number(constructionCost))) * 100).toFixed(1)}%</strong> of total</span>
+                      </div>
+                    )}
+                  </div>
+
+
+                  {/* ────────────────── MODEL 1: REVENUE SHARING ────────────────── */}
+                  {jvType === 'Revenue Share' && (
+                    <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '0 0 4px 0', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em' }}>📈 Revenue Split Configuration</h3>
+                      <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                        <div className="ai-form-group">
+                          <label className="ai-label">Expected Sales Revenue (₹)</label>
+                          <input
+                            type="number"
+                            className="ai-input"
+                            placeholder="e.g. 1500000000 (150 Cr)"
+                            value={expectedRevenue}
+                            onChange={(e) => setExpectedRevenue(e.target.value)}
+                          />
+                          {renderCostHelper(expectedRevenue)}
+                        </div>
+                        <div className="ai-form-group">
+                          <label className="ai-label">Landowner Split (%)</label>
+                          <input
+                            type="number"
+                            className="ai-input"
+                            placeholder="e.g. 35"
+                            min="0" max="100"
+                            value={ownerSharePct}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setOwnerSharePct(v);
+                              if (v !== '' && !isNaN(v)) setBuilderSharePct(String(Math.max(0, 100 - Number(v))));
+                            }}
+                          />
+                        </div>
+                        <div className="ai-form-group">
+                          <label className="ai-label">Builder Split (%)</label>
+                          <input
+                            type="number"
+                            className="ai-input"
+                            placeholder="e.g. 65"
+                            min="0" max="100"
+                            value={builderSharePct}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setBuilderSharePct(v);
+                              if (v !== '' && !isNaN(v)) setOwnerSharePct(String(Math.max(0, 100 - Number(v))));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {/* Split Validation Warning */}
+                      {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) > 0.01 && (
+                        <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '10.5px', color: '#b91c1c', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          ⚠️ Splits must add up to 100%. Current total: {(Number(ownerSharePct) + Number(builderSharePct)).toFixed(1)}%
+                        </div>
+                      )}
+                      {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) <= 0.01 && (
+                        <div style={{ padding: '6px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', fontSize: '10px', color: '#15803d', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          ✅ Splits total 100% — Valid
+                        </div>
+                      )}
+
+                      {expectedRevenue && ownerSharePct && builderSharePct && (
+                        <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11.5px', marginTop: '10px' }}>
+                          <span style={{ fontWeight: '700', color: '#334155', display: 'block', marginBottom: '8px' }}>💰 Estimated Sharing Payout:</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span>Landowner Share ({ownerSharePct}%):</span>
+                            <strong style={{ color: '#059669' }}>₹{((Number(expectedRevenue) * Number(ownerSharePct)) / 100).toLocaleString('en-IN')}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Builder Share ({builderSharePct}%):</span>
+                            <strong style={{ color: '#1e293b' }}>₹{((Number(expectedRevenue) * Number(builderSharePct)) / 100).toLocaleString('en-IN')}</strong>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ────────────────── MODEL 2: AREA SHARING ────────────────── */}
+                  {jvType === 'Area Share' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '0 0 4px 0', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em' }}>🏢 Developed Area Split Configuration</h3>
+                        <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Total Saleable Area (sq.ft.)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 200000"
+                              value={totalSaleableArea}
+                              onChange={(e) => setTotalSaleableArea(e.target.value)}
+                            />
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Landowner Split (%)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 40"
+                              min="0" max="100"
+                              value={ownerSharePct}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setOwnerSharePct(v);
+                                if (v !== '' && !isNaN(v)) setBuilderSharePct(String(Math.max(0, 100 - Number(v))));
+                              }}
+                            />
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Builder Split (%)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 60"
+                              min="0" max="100"
+                              value={builderSharePct}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setBuilderSharePct(v);
+                                if (v !== '' && !isNaN(v)) setOwnerSharePct(String(Math.max(0, 100 - Number(v))));
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {/* Split Validation Warning */}
+                        {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) > 0.01 && (
+                          <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '10.5px', color: '#b91c1c', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ⚠️ Splits must add up to 100%. Current total: {(Number(ownerSharePct) + Number(builderSharePct)).toFixed(1)}%
+                          </div>
+                        )}
+                        {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) <= 0.01 && (
+                          <div style={{ padding: '6px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', fontSize: '10px', color: '#15803d', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ✅ Splits total 100% — Valid
+                          </div>
+                        )}
+
+                        {totalSaleableArea && ownerSharePct && builderSharePct && (
+                          <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11.5px', marginTop: '10px' }}>
+                            <span style={{ fontWeight: '700', color: '#334155', display: 'block', marginBottom: '8px' }}>📐 Developed Area Allocation:</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span>Landowner Area ({ownerSharePct}%):</span>
+                              <strong style={{ color: '#059669' }}>{((Number(totalSaleableArea) * Number(ownerSharePct)) / 100).toLocaleString()} sq.ft.</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span>Builder Area ({builderSharePct}%):</span>
+                              <strong style={{ color: '#1e293b' }}>{((Number(totalSaleableArea) * Number(builderSharePct)) / 100).toLocaleString()} sq.ft.</strong>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                       {/* GAP 5: Tower / Floor Configuration Panel */}
+                       <div style={{ border: '1px solid #e0f2fe', padding: '14px 16px', borderRadius: '10px', background: 'linear-gradient(135deg, #f0f9ff 0%, #ecfdf5 100%)' }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
+                           <div>
+                             <h3 style={{ fontSize: '11px', fontWeight: '700', margin: '0', textTransform: 'uppercase', color: '#0369a1' }}>🏗️ Tower / Floor Unit Configuration</h3>
+                             <p style={{ fontSize: '9.5px', color: '#64748b', margin: '2px 0 0 0' }}>Enter your tower/floor layout. Click "Generate Units" to auto-populate the ledger.</p>
+                           </div>
+                           <button
+                             type="button"
+                             onClick={() => {
+                               const towers = Math.max(1, parseInt(numTowers) || 1);
+                               const floors = Math.max(1, parseInt(numFloors) || 1);
+                               const perFloor = Math.max(1, parseInt(numUnitsPerFloor) || 1);
+                               const generated = [];
+                               for (let t = 1; t <= towers; t++) {
+                                 for (let f = 1; f <= floors; f++) {
+                                   for (let u = 1; u <= perFloor; u++) {
+                                     generated.push({ unitNo: `T${t}-F${f}-U${String(u).padStart(2,'0')}`, owner: 'Builder' });
+                                   }
+                                 }
+                               }
+                               setUnitsAllocatedList(generated);
+                               setOwnerAllocatedUnits('');
+                               setBuilderAllocatedUnits('');
+                               toast.success(`Generated ${generated.length} units across ${towers} Tower(s), ${floors} Floor(s).`);
+                             }}
+                             className="btn btn-secondary btn-sm"
+                             style={{ padding: '6px 12px', fontSize: '10.5px', background: '#0369a1', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                           >
+                             <FolderPlus size={12} />
+                             Generate Units
+                           </button>
+                         </div>
+                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                           <div className="ai-form-group">
+                             <label className="ai-label">No. of Towers</label>
+                             <input type="number" className="ai-input" min="1" max="20" placeholder="e.g. 2" value={numTowers} onChange={(e) => setNumTowers(e.target.value)} />
+                           </div>
+                           <div className="ai-form-group">
+                             <label className="ai-label">Floors per Tower</label>
+                             <input type="number" className="ai-input" min="1" max="50" placeholder="e.g. 8" value={numFloors} onChange={(e) => setNumFloors(e.target.value)} />
+                           </div>
+                           <div className="ai-form-group">
+                             <label className="ai-label">Units per Floor</label>
+                             <input type="number" className="ai-input" min="1" max="20" placeholder="e.g. 4" value={numUnitsPerFloor} onChange={(e) => setNumUnitsPerFloor(e.target.value)} />
+                           </div>
+                           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '2px' }}>
+                             <div style={{ fontSize: '10px', color: '#475569', background: '#f1f5f9', padding: '8px 10px', borderRadius: '6px' }}>
+                               📦 Total Units: <strong style={{ color: '#0369a1' }}>{(parseInt(numTowers)||1) * (parseInt(numFloors)||1) * (parseInt(numUnitsPerFloor)||1)}</strong>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+
+                      {/* Interactive Unit Allocation Ledger */}
+                      <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                          <div>
+                            <h3 style={{ fontSize: '11.5px', fontWeight: 'bold', margin: '0', textTransform: 'uppercase', color: '#1e293b' }}>📋 Unit Allocation Ledger</h3>
+                            <p style={{ fontSize: '10px', color: '#64748b', margin: '2px 0 0 0' }}>Assign specific inventory units to partners. Click a unit to toggle its allocation.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!ownerSharePct) {
+                                toast.warning('Please enter Land Owner Allocation % first');
+                                return;
+                              }
+                              const landownerPercentage = Number(ownerSharePct);
+                              const totalUnitsCount = unitsAllocatedList.length;
+                              const landownerUnitsCount = Math.round((landownerPercentage / 100) * totalUnitsCount);
+
+                              const updated = unitsAllocatedList.map((unit, idx) => ({
+                                ...unit,
+                                owner: idx < landownerUnitsCount ? 'Landowner' : 'Builder'
+                              }));
+                              setUnitsAllocatedList(updated);
+                              
+                              const ownerUnitsText = updated.filter(u => u.owner === 'Landowner').map(u => u.unitNo).join(', ');
+                              const builderUnitsText = updated.filter(u => u.owner === 'Builder').map(u => u.unitNo).join(', ');
+                              setOwnerAllocatedUnits(ownerUnitsText);
+                              setBuilderAllocatedUnits(builderUnitsText);
+
+                              toast.success(`Allocated ${landownerUnitsCount} units to Landowner and ${totalUnitsCount - landownerUnitsCount} units to Builder.`);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px 12px', fontSize: '10.5px', background: '#1b5e4f', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', border: 'none' }}
+                          >
+                            <Sliders size={12} />
+                            Auto-Allocate Units ({ownerSharePct || 0}%)
+                          </button>
+                        </div>
+
+                        {/* Visual Ledger Grid */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(65px, 1fr))',
+                          gap: '8px',
+                          background: '#f8fafc',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          border: '1px solid #f1f5f9',
+                          maxHeight: '180px',
+                          overflowY: 'auto'
+                        }}>
+                          {unitsAllocatedList.map((unit, idx) => (
+                            <div
+                              key={unit.unitNo}
+                              onClick={() => {
+                                const updated = [...unitsAllocatedList];
+                                updated[idx].owner = updated[idx].owner === 'Landowner' ? 'Builder' : 'Landowner';
+                                setUnitsAllocatedList(updated);
+
+                                const ownerUnitsText = updated.filter(u => u.owner === 'Landowner').map(u => u.unitNo).join(', ');
+                                const builderUnitsText = updated.filter(u => u.owner === 'Builder').map(u => u.unitNo).join(', ');
+                                setOwnerAllocatedUnits(ownerUnitsText);
+                                setBuilderAllocatedUnits(builderUnitsText);
+                              }}
+                              style={{
+                                padding: '6px 4px',
+                                border: '1px solid',
+                                borderColor: unit.owner === 'Landowner' ? '#059669' : '#3b82f6',
+                                background: unit.owner === 'Landowner' ? 'rgba(5, 150, 105, 0.08)' : 'rgba(59, 130, 246, 0.08)',
+                                color: unit.owner === 'Landowner' ? '#047857' : '#1d4ed8',
+                                borderRadius: '6px',
+                                textAlign: 'center',
+                                fontSize: '10px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px'
+                              }}
+                            >
+                              <span>{unit.unitNo}</span>
+                              <span style={{ fontSize: '7.5px', textTransform: 'uppercase', opacity: 0.8 }}>
+                                {unit.owner === 'Landowner' ? 'Owner' : 'Builder'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Hidden Text Fields kept for backend compatibility */}
+                        <div style={{ display: 'none' }}>
+                          <input type="hidden" value={ownerAllocatedUnits} />
+                          <input type="hidden" value={builderAllocatedUnits} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ────────────────── MODEL 3: PROFIT SHARING ────────────────── */}
+                  {jvType === 'Profit Share' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '0 0 4px 0', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em' }}>⚖️ Profit Sharing Configuration</h3>
+                        <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Expected Revenue (₹)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 2200000000 (220 Cr)"
+                              value={expectedRevenue}
+                              onChange={(e) => setExpectedRevenue(e.target.value)}
+                            />
+                            {renderCostHelper(expectedRevenue)}
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Construction Cost (₹)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 1600000000 (160 Cr)"
+                              value={constructionCost}
+                              onChange={(e) => setConstructionCost(e.target.value)}
+                            />
+                            {renderCostHelper(constructionCost)}
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Approval Cost (₹)</label>
+                            <input type="number" className="ai-input" placeholder="e.g. 20000000 (2 Cr)" value={approvalCost} onChange={(e) => setApprovalCost(e.target.value)} />
+                            {renderCostHelper(approvalCost)}
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Marketing Cost (₹)</label>
+                            <input type="number" className="ai-input" placeholder="e.g. 30000000 (3 Cr)" value={marketingCost} onChange={(e) => setMarketingCost(e.target.value)} />
+                            {renderCostHelper(marketingCost)}
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Misc / Other Cost (₹)</label>
+                            <input type="number" className="ai-input" placeholder="e.g. 10000000 (1 Cr)" value={miscCost} onChange={(e) => setMiscCost(e.target.value)} />
+                            {renderCostHelper(miscCost)}
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Net Profit (₹) — Auto</label>
+                            <input
+                              type="text"
+                              className="ai-input"
+                              style={{ background: '#f1f5f9', fontWeight: 'bold', color: (() => { const p = Number(expectedRevenue) - Number(constructionCost) - Number(approvalCost||0) - Number(marketingCost||0) - Number(miscCost||0); return p >= 0 ? '#059669' : '#dc2626'; })() }}
+                              value={(() => {
+                                const netProfit = Number(expectedRevenue||0) - Number(constructionCost||0) - Number(approvalCost||0) - Number(marketingCost||0) - Number(miscCost||0);
+                                return expectedRevenue || constructionCost ? `₹${netProfit.toLocaleString('en-IN')}` : '₹0';
+                              })()}
+                              readOnly
+                            />
+                            {expectedRevenue && constructionCost && (
+                              <span style={{ fontSize: '9px', color: '#64748b', marginTop: '2px', display: 'block' }}>
+                                Rev − (Const + Approvals + Mktg + Misc)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginTop: '4px' }}>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Landowner Profit Share (%)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 40"
+                              min="0" max="100"
+                              value={ownerSharePct}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setOwnerSharePct(v);
+                                if (v !== '' && !isNaN(v)) setBuilderSharePct(String(Math.max(0, 100 - Number(v))));
+                              }}
+                            />
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Builder Profit Share (%)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 60"
+                              min="0" max="100"
+                              value={builderSharePct}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setBuilderSharePct(v);
+                                if (v !== '' && !isNaN(v)) setOwnerSharePct(String(Math.max(0, 100 - Number(v))));
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {/* Split Validation Warning */}
+                        {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) > 0.01 && (
+                          <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '10.5px', color: '#b91c1c', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ⚠️ Splits must add up to 100%. Current total: {(Number(ownerSharePct) + Number(builderSharePct)).toFixed(1)}%
+                          </div>
+                        )}
+                        {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) <= 0.01 && (
+                          <div style={{ padding: '6px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', fontSize: '10px', color: '#15803d', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ✅ Splits total 100% — Valid
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Cost Overrun Recalculator Panel */}
+                      <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div>
+                          <h3 style={{ fontSize: '11.5px', fontWeight: 'bold', margin: '0', textTransform: 'uppercase', color: '#1e293b' }}>🔄 Dynamic Cost Overrun Recalculator</h3>
+                          <p style={{ fontSize: '10px', color: '#64748b', margin: '2px 0 0 0' }}>Simulate budget increases and see how the net profits redistribute dynamically.</p>
+                        </div>
+
+                        <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Actual Construction Cost (₹)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              style={{ borderColor: actualConstructionCost && Number(actualConstructionCost) > Number(constructionCost) ? '#ef4444' : '#059669' }}
+                              placeholder="Simulate budget overrun, e.g. 1750000000"
+                              value={actualConstructionCost}
+                              onChange={(e) => setActualConstructionCost(e.target.value)}
+                            />
+                            {renderCostHelper(actualConstructionCost)}
+                            {actualConstructionCost && Number(actualConstructionCost) > Number(constructionCost) && (
+                              <span style={{ fontSize: '9px', color: '#ef4444', fontWeight: '600', marginTop: '4px', display: 'block' }}>
+                                ⚠️ Cost overrun detected: +{(((Number(actualConstructionCost) - Number(constructionCost)) / Number(constructionCost)) * 100).toFixed(1)}% above budget
+                              </span>
+                            )}
+                          </div>
+
+                          {expectedRevenue && constructionCost && ownerSharePct && builderSharePct && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px' }}>
+                              <table style={{ width: '100%', minWidth: '0', borderCollapse: 'collapse' }}>
+                                <thead>
+                                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <th style={{ textAlign: 'left', paddingBottom: '4px', fontSize: '9.5px', color: '#64748b' }}>Party</th>
+                                    <th style={{ textAlign: 'right', paddingBottom: '4px', fontSize: '9.5px', color: '#64748b' }}>Est. Share</th>
+                                    <th style={{ textAlign: 'right', paddingBottom: '4px', fontSize: '9.5px', color: '#64748b' }}>Actual Share</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(() => {
+                                    const estProfit = Number(expectedRevenue) - Number(constructionCost);
+                                    const actCost = actualConstructionCost ? Number(actualConstructionCost) : Number(constructionCost);
+                                    const actProfit = Number(expectedRevenue) - actCost;
+                                    return (
+                                      <>
+                                        <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                          <td style={{ padding: '6px 0', fontWeight: '600' }}>Landowner ({ownerSharePct}%)</td>
+                                          <td style={{ textAlign: 'right', color: '#64748b' }}>₹{((estProfit * Number(ownerSharePct)) / 100).toLocaleString('en-IN')}</td>
+                                          <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#059669' }}>₹{((actProfit * Number(ownerSharePct)) / 100).toLocaleString('en-IN')}</td>
+                                        </tr>
+                                        <tr>
+                                          <td style={{ padding: '6px 0', fontWeight: '600' }}>Builder ({builderSharePct}%)</td>
+                                          <td style={{ textAlign: 'right', color: '#64748b' }}>₹{((estProfit * Number(builderSharePct)) / 100).toLocaleString('en-IN')}</td>
+                                          <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#1e293b' }}>₹{((actProfit * Number(builderSharePct)) / 100).toLocaleString('en-IN')}</td>
+                                        </tr>
+                                      </>
+                                    );
+                                  })()}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ────────────────── MODEL 4: HYBRID JV ────────────────── */}
+                  {jvType === 'Hybrid' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '0 0 4px 0', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em' }}>💎 Hybrid Splits & Guarantee Configuration</h3>
+                        <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Minimum Guarantee to Owner (₹)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 200000000 (20 Cr)"
+                              value={minGuarantee}
+                              onChange={(e) => setMinGuarantee(e.target.value)}
+                            />
+                            {renderCostHelper(minGuarantee)}
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Owner Profit Share Upside (%)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 20"
+                              min="0" max="100"
+                              value={ownerSharePct}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setOwnerSharePct(v);
+                                if (v !== '' && !isNaN(v)) setBuilderSharePct(String(Math.max(0, 100 - Number(v))));
+                              }}
+                            />
+                          </div>
+                          <div className="ai-form-group">
+                            <label className="ai-label">Builder Profit Share Split (%)</label>
+                            <input
+                              type="number"
+                              className="ai-input"
+                              placeholder="e.g. 80"
+                              min="0" max="100"
+                              value={builderSharePct}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setBuilderSharePct(v);
+                                if (v !== '' && !isNaN(v)) setOwnerSharePct(String(Math.max(0, 100 - Number(v))));
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {/* Split Validation Warning */}
+                        {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) > 0.01 && (
+                          <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', fontSize: '10.5px', color: '#b91c1c', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ⚠️ Splits must add up to 100%. Current total: {(Number(ownerSharePct) + Number(builderSharePct)).toFixed(1)}%
+                          </div>
+                        )}
+                        {ownerSharePct && builderSharePct && Math.abs((Number(ownerSharePct) + Number(builderSharePct)) - 100) <= 0.01 && (
+                          <div style={{ padding: '6px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', fontSize: '10px', color: '#15803d', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ✅ Splits total 100% — Valid
+                          </div>
+                        )}
+                      </div>
+
+                       {/* GAP 7: Hybrid Guarantee Threshold Warning */}
+                       {minGuarantee && expectedRevenue && constructionCost && (() => {
+                         const totalCost = Number(constructionCost) + Number(approvalCost||0) + Number(marketingCost||0) + Number(miscCost||0);
+                         const expectedProfit = Number(expectedRevenue) - totalCost;
+                         const canCoverGuarantee = expectedProfit >= Number(minGuarantee);
+                         return !canCoverGuarantee ? (
+                           <div style={{ padding: '10px 14px', background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '8px', fontSize: '10.5px', color: '#92400e' }}>
+                             <div style={{ fontWeight: '700', marginBottom: '4px' }}>⚠️ Guarantee Coverage Risk Detected!</div>
+                             <div>Estimated Net Profit: <strong>₹{expectedProfit.toLocaleString('en-IN')}</strong></div>
+                             <div>Minimum Guarantee Promised: <strong>₹{Number(minGuarantee).toLocaleString('en-IN')}</strong></div>
+                             <div style={{ marginTop: '4px', color: '#b45309' }}>🔴 The project's expected profit (₹{(expectedProfit/10000000).toFixed(2)} Cr) is <strong>LESS</strong> than the guarantee committed to the landowner (₹{(Number(minGuarantee)/10000000).toFixed(2)} Cr). Builder may not be able to honour this guarantee. Renegotiate terms.</div>
+                           </div>
+                         ) : (
+                           <div style={{ padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', fontSize: '10.5px', color: '#15803d', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                             ✅ <span>Guarantee Viable — Expected Profit (₹{(expectedProfit/10000000).toFixed(2)} Cr) covers the committed guarantee (₹{(Number(minGuarantee)/10000000).toFixed(2)} Cr).</span>
+                           </div>
+                         );
+                       })()}
+
+                      {/* Performance Simulator Box */}
+                      {minGuarantee && ownerSharePct && (
+                        <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <h4 style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e293b', margin: '0' }}>🌟 Hybrid Performance Simulator Scenario</h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ background: 'rgba(5,150,105,0.02)', border: '1px solid rgba(5,150,105,0.15)', padding: '12px', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#059669', textTransform: 'uppercase' }}>Scenario A: High Performance</span>
+                              <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 8px 0' }}>Project performs well. Profit reaches ₹80 Crore.</p>
+                              <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Landowner Gets:</span>
+                                <strong style={{ color: '#059669' }}>₹{(Number(minGuarantee) + (800000000 * Number(ownerSharePct)) / 100).toLocaleString('en-IN')}</strong>
+                              </div>
+                              <span style={{ fontSize: '8px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>(₹{Number(minGuarantee).toLocaleString('en-IN')} Guarantee + {ownerSharePct}% of Profit)</span>
+                            </div>
+
+                            <div style={{ background: 'rgba(239,68,68,0.02)', border: '1px solid rgba(239,68,68,0.15)', padding: '12px', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#ef4444', textTransform: 'uppercase' }}>Scenario B: Low Performance</span>
+                              <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 8px 0' }}>Project performs poorly. Profit drops to ₹10 Crore.</p>
+                              <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Landowner Gets:</span>
+                                <strong style={{ color: '#ef4444' }}>₹{(Number(minGuarantee) + (100000000 * Number(ownerSharePct)) / 100).toLocaleString('en-IN')}</strong>
+                              </div>
+                              <span style={{ fontSize: '8px', color: '#94a3b8', display: 'block', marginTop: '2px' }}>(₹{Number(minGuarantee).toLocaleString('en-IN')} Guarantee + {ownerSharePct}% of Profit)</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ────────────────── COMMON / OPTIONAL INVESTOR DETAILS ────────────────── */}
+                  <div style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px', background: '#fafafa' }}>
+                    <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '0 0 10px 0', textTransform: 'uppercase', color: '#64748b' }}>💰 Disbursement & Investor Settings</h3>
+                    <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                      <div className="ai-form-group">
+                        <label className="ai-label">Disbursement Frequency</label>
+                        <select
+                          className="ai-select"
+                          value={paymentFrequency}
+                          onChange={(e) => setPaymentFrequency(e.target.value)}
+                        >
+                          <option value="Quarterly">Quarterly</option>
+                          <option value="Monthly">Monthly</option>
+                          <option value="Bi-Annually">Bi-Annually</option>
+                          <option value="Milestone-linked">Milestone-linked</option>
+                        </select>
                       </div>
                       <div className="ai-form-group">
                         <label className="ai-label">Investor Share % (Optional)</label>
                         <input
                           type="number"
                           className="ai-input"
-                          placeholder="e.g. 0"
+                          placeholder="e.g. 10"
                           value={investorSharePct}
                           onChange={(e) => setInvestorSharePct(e.target.value)}
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: '12px' }}>
                       <div className="ai-form-group">
-                        <label className="ai-label">Profit Distribution Scheme</label>
+                        <label className="ai-label">Distribution Type</label>
                         <input
                           type="text"
                           className="ai-input"
-                          placeholder="e.g. Revenue Share, Profit Share, or Flat Allocation"
+                          placeholder="e.g. Escrow-first Split"
                           value={distributionType}
                           onChange={(e) => setDistributionType(e.target.value)}
                         />
                       </div>
-                      <div className="ai-form-group">
-                        <label className="ai-label">Disbursement Frequency</label>
-                        <input
-                          type="text"
-                          className="ai-input"
-                          placeholder="e.g. Monthly, Quarterly, or Milestone-linked"
-                          value={paymentFrequency}
-                          onChange={(e) => setPaymentFrequency(e.target.value)}
-                        />
+                    </div>
+                  </div>
+
+                  {/* ─────────────────── GAP 8: TERMS & RESPONSIBILITIES ─────────────────── */}
+                  <div style={{ border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', background: '#ffffff' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                      <span style={{ fontSize: '15px' }}>📜</span>
+                      <div>
+                        <h3 style={{ fontSize: '11px', fontWeight: '700', margin: '0', textTransform: 'uppercase', color: '#1e293b', letterSpacing: '0.04em' }}>Terms &amp; Responsibilities</h3>
+                        <p style={{ fontSize: '9.5px', color: '#64748b', margin: '2px 0 0 0' }}>Click any chip to deselect. Add custom responsibilities using the field below.</p>
                       </div>
                     </div>
-
-                    <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-                      <div className="ai-form-group">
-                        <label className="ai-label">Owner Allocated Units</label>
-                        <input
-                          type="text"
-                          className="ai-input"
-                          placeholder="e.g. Flats 101, 102, 201, 202, Shops A & B"
-                          value={ownerAllocatedUnits}
-                          onChange={(e) => setOwnerAllocatedUnits(e.target.value)}
-                        />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
+                      <div>
+                        <div style={{ fontSize: '10px', fontWeight: '700', marginBottom: '8px' }}>
+                          <span style={{ background: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: '20px' }}>🏗️ Builder Responsibilities</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                          {['Construction & Architecture', 'Government Approvals & RERA', 'Contractor & Labour Management', 'Marketing & Sales', 'Project Management', 'Utility Connections'].map(item => {
+                            const active = builderResponsibilities.includes(item);
+                            return (
+                              <span key={item} onClick={() => setBuilderResponsibilities(prev => active ? prev.filter(r => r !== item) : [...prev, item])} style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', userSelect: 'none', fontWeight: '500', transition: 'all 0.15s', background: active ? '#1e40af' : '#f1f5f9', color: active ? '#fff' : '#475569', border: active ? '1px solid #1e40af' : '1px solid #e2e8f0' }}>
+                                {active ? '✓ ' : ''}{item}
+                              </span>
+                            );
+                          })}
+                          {builderResponsibilities.filter(r => !['Construction & Architecture', 'Government Approvals & RERA', 'Contractor & Labour Management', 'Marketing & Sales', 'Project Management', 'Utility Connections'].includes(r)).map(item => (
+                            <span key={item} onClick={() => setBuilderResponsibilities(prev => prev.filter(r => r !== item))} style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', fontWeight: '500', background: '#1e40af', color: '#fff', border: '1px solid #1e40af' }}>✓ {item}</span>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input type="text" className="ai-input" style={{ flex: 1 }} placeholder="Add custom..." value={builderRespCustom} onChange={(e) => setBuilderRespCustom(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && builderRespCustom.trim()) { setBuilderResponsibilities(prev => [...prev, builderRespCustom.trim()]); setBuilderRespCustom(''); }}} />
+                          <button type="button" onClick={() => { if (builderRespCustom.trim()) { setBuilderResponsibilities(prev => [...prev, builderRespCustom.trim()]); setBuilderRespCustom(''); }}} style={{ padding: '6px 12px', background: '#1e40af', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>+ Add</button>
+                        </div>
                       </div>
-                      <div className="ai-form-group">
-                        <label className="ai-label">Builder Allocated Units</label>
-                        <input
-                          type="text"
-                          className="ai-input"
-                          placeholder="e.g. Flats 301 to 1004, Commercial Parking 1-15"
-                          value={builderAllocatedUnits}
-                          onChange={(e) => setBuilderAllocatedUnits(e.target.value)}
-                        />
+                      <div>
+                        <div style={{ fontSize: '10px', fontWeight: '700', marginBottom: '8px' }}>
+                          <span style={{ background: '#d1fae5', color: '#059669', padding: '2px 10px', borderRadius: '20px' }}>🏷️ Landowner Responsibilities</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                          {['Land Title Clearance', 'Cooperation for Approvals & NOC', 'No Encumbrance on Land', 'Handover of Possession', 'Payment of Property Tax till Handover'].map(item => {
+                            const active = ownerResponsibilities.includes(item);
+                            return (
+                              <span key={item} onClick={() => setOwnerResponsibilities(prev => active ? prev.filter(r => r !== item) : [...prev, item])} style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', userSelect: 'none', fontWeight: '500', transition: 'all 0.15s', background: active ? '#059669' : '#f1f5f9', color: active ? '#fff' : '#475569', border: active ? '1px solid #059669' : '1px solid #e2e8f0' }}>
+                                {active ? '✓ ' : ''}{item}
+                              </span>
+                            );
+                          })}
+                          {ownerResponsibilities.filter(r => !['Land Title Clearance', 'Cooperation for Approvals & NOC', 'No Encumbrance on Land', 'Handover of Possession', 'Payment of Property Tax till Handover'].includes(r)).map(item => (
+                            <span key={item} onClick={() => setOwnerResponsibilities(prev => prev.filter(r => r !== item))} style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', fontWeight: '500', background: '#059669', color: '#fff', border: '1px solid #059669' }}>✓ {item}</span>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input type="text" className="ai-input" style={{ flex: 1 }} placeholder="Add custom..." value={ownerRespCustom} onChange={(e) => setOwnerRespCustom(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && ownerRespCustom.trim()) { setOwnerResponsibilities(prev => [...prev, ownerRespCustom.trim()]); setOwnerRespCustom(''); }}} />
+                          <button type="button" onClick={() => { if (ownerRespCustom.trim()) { setOwnerResponsibilities(prev => [...prev, ownerRespCustom.trim()]); setOwnerRespCustom(''); }}} style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>+ Add</button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1233,26 +2161,13 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                   {/* Financials & Escrow */}
                   <div style={{ border: '1px solid #e2e8f0', padding: '16px', borderRadius: '8px', background: '#fafafa' }}>
                     <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 12px 0', textTransform: 'uppercase', color: '#1e293b' }}>🏛️ Cost Estimations & Escrow Bank</h3>
-                    <div className="grid grid-2 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: '12px' }}>
-                      <div className="ai-form-group">
-                        <label className="ai-label">Land Valuation (INR) *</label>
-                        <input
-                          type="number"
-                          className="ai-input"
-                          placeholder="e.g. 150000000"
-                          value={landValue}
-                          onChange={(e) => setLandValue(e.target.value)}
-                        />
-                      </div>
-                      <div className="ai-form-group">
-                        <label className="ai-label">Est. Construction Cost (INR) *</label>
-                        <input
-                          type="number"
-                          className="ai-input"
-                          placeholder="e.g. 80000000"
-                          value={constructionCost}
-                          onChange={(e) => setConstructionCost(e.target.value)}
-                        />
+                    
+                    {/* Read-only Commercial Summary from Step 4 */}
+                    <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <span style={{ fontSize: '9.5px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Commercial Summary (Configured in Step 4)</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '11px' }}>
+                        <div>Land Valuation: <strong style={{ color: '#0f766e' }}>₹{landValue ? Number(landValue).toLocaleString('en-IN') : '0'}</strong></div>
+                        <div>Est. Construction Cost: <strong style={{ color: '#1e293b' }}>₹{constructionCost ? Number(constructionCost).toLocaleString('en-IN') : '0'}</strong></div>
                       </div>
                     </div>
 
@@ -1266,6 +2181,7 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           value={approvalCost}
                           onChange={(e) => setApprovalCost(e.target.value)}
                         />
+                        {renderCostHelper(approvalCost)}
                       </div>
                       <div className="ai-form-group">
                         <label className="ai-label">Marketing Cost (INR)</label>
@@ -1276,6 +2192,7 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           value={marketingCost}
                           onChange={(e) => setMarketingCost(e.target.value)}
                         />
+                        {renderCostHelper(marketingCost)}
                       </div>
                       <div className="ai-form-group">
                         <label className="ai-label">Miscellaneous Buffers (INR)</label>
@@ -1286,6 +2203,7 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           value={miscCost}
                           onChange={(e) => setMiscCost(e.target.value)}
                         />
+                        {renderCostHelper(miscCost)}
                       </div>
                     </div>
 
@@ -1367,6 +2285,7 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           value={stampAmount}
                           onChange={(e) => setStampAmount(e.target.value)}
                         />
+                        {renderCostHelper(stampAmount)}
                       </div>
                     </div>
 
@@ -1430,6 +2349,48 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
               {formTab === 'advisory' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   
+                  {/* GAP 10: JV Summary Preview Card */}
+                  <div style={{ border: '1px solid #cbd5e1', padding: '16px', borderRadius: '12px', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                      <span style={{ fontSize: '15px' }}>🔍</span>
+                      <h3 style={{ fontSize: '11px', fontWeight: '700', margin: '0', textTransform: 'uppercase', color: '#334155', letterSpacing: '0.05em' }}>Joint Venture Summary Preview</h3>
+                      <span style={{ fontSize: '9px', background: '#e2e8f0', color: '#475569', padding: '1px 7px', borderRadius: '20px', fontWeight: '600', marginLeft: 'auto' }}>Confirm Before Run</span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '11px' }}>
+                      <div>
+                        <span style={{ color: '#64748b', display: 'block', fontSize: '9px', textTransform: 'uppercase', fontWeight: 'bold' }}>Partners & Project</span>
+                        <strong style={{ color: '#1e293b', display: 'block', marginTop: '2px' }}>{projectName || 'Unnamed Project'}</strong>
+                        <span style={{ display: 'block', marginTop: '1px', color: '#475569' }}>👤 Owner: {landowners[0]?.name || 'N/A'}</span>
+                        <span style={{ display: 'block', color: '#475569' }}>🏢 Builder: {builderName || 'N/A'}</span>
+                      </div>
+
+                      <div>
+                        <span style={{ color: '#64748b', display: 'block', fontSize: '9px', textTransform: 'uppercase', fontWeight: 'bold' }}>JV Structure & Splits</span>
+                        <strong style={{ color: '#0f766e', display: 'block', marginTop: '2px' }}>⚡ {jvType}</strong>
+                        <span style={{ display: 'block', marginTop: '1px', color: '#475569' }}>🏷️ Owner Share: {ownerSharePct || 0}%</span>
+                        <span style={{ display: 'block', color: '#475569' }}>🏗️ Builder Share: {builderSharePct || 0}%</span>
+                      </div>
+
+                      <div>
+                        <span style={{ color: '#64748b', display: 'block', fontSize: '9px', textTransform: 'uppercase', fontWeight: 'bold' }}>Project Valuation</span>
+                        <span style={{ display: 'block', marginTop: '2px', color: '#475569' }}>🏷️ Land Value: <strong>₹{(Number(landValue||0)/10000000).toFixed(2)} Cr</strong></span>
+                        <span style={{ display: 'block', color: '#475569' }}>🔨 Est. Cost: <strong>₹{(Number(constructionCost||0)/10000000).toFixed(2)} Cr</strong></span>
+                        <span style={{ display: 'block', color: '#0f766e', fontWeight: 'bold' }}>💰 Capital: ₹{((Number(landValue||0)+Number(constructionCost||0))/10000000).toFixed(2)} Cr</span>
+                      </div>
+
+                      <div>
+                        <span style={{ color: '#64748b', display: 'block', fontSize: '9px', textTransform: 'uppercase', fontWeight: 'bold' }}>Allocations & Responsibilities</span>
+                        {jvType === 'Area Share' ? (
+                          <span style={{ display: 'block', marginTop: '2px', color: '#475569' }}>📦 Units: <strong>{unitsAllocatedList.filter(u => u.owner === 'Landowner').length} Owner</strong> / <strong>{unitsAllocatedList.filter(u => u.owner === 'Builder').length} Builder</strong></span>
+                        ) : (
+                          <span style={{ display: 'block', marginTop: '2px', color: '#475569' }}>💵 Expected Rev: <strong>₹{(Number(expectedRevenue||0)/10000000).toFixed(2)} Cr</strong></span>
+                        )}
+                        <span style={{ display: 'block', color: '#1e40af', marginTop: '1px' }}>📝 Roles: {builderResponsibilities.length} Builder / {ownerResponsibilities.length} Owner</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Partner Demands */}
                   <div className="grid grid-3 gap-md" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
                     <div className="ai-form-group">
@@ -1616,6 +2577,14 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={handleLoadAmendment}
+                    className="btn btn-secondary btn-sm flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    style={{ fontSize: '11px', padding: '6px 12px', height: 'fit-content', background: '#0f766e', color: '#ffffff', border: 'none' }}
+                  >
+                    <Sliders size={14} />
+                    Edit &amp; Re-Analyze
+                  </button>
                   <button
                     onClick={handleStartChat}
                     disabled={chatStarting}
@@ -2312,6 +3281,68 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Glassmorphic AI JV Comparison Grid */}
+                      <div style={{ background: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(10px)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                        <h4 style={{ color: '#0f766e', borderBottom: '1px solid rgba(16, 185, 129, 0.1)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 'bold' }}>
+                          <Sparkles size={14} className="text-emerald-600" />
+                          AI Joint Venture Scenario Comparison Card
+                        </h4>
+                        <div className="table-responsive" style={{ marginTop: '12px' }}>
+                          <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '11px' }}>
+                            <thead>
+                              <tr style={{ background: 'rgba(15, 118, 110, 0.05)', borderBottom: '1.5px solid rgba(16, 185, 129, 0.2)' }}>
+                                <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 'bold', color: '#0f766e', textTransform: 'uppercase' }}>JV Model</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', color: '#0f766e', textTransform: 'uppercase' }}>Risk Level</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', color: '#0f766e', textTransform: 'uppercase' }}>Capital Req.</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', color: '#0f766e', textTransform: 'uppercase' }}>Expected Builder ROI</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 'bold', color: '#0f766e', textTransform: 'uppercase' }}>AI Evaluation / Reason</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(aiComparison || [
+                                { model: 'Revenue Sharing', risk: 'Medium', capitalRequirement: 'Low', expectedRoi: '28%', reason: 'Reduces builder\'s upfront land acquisition requirement while maintaining high project returns.' },
+                                { model: 'Area Sharing', risk: 'Medium', capitalRequirement: 'Low', expectedRoi: '25%', reason: 'Best when landowner wants property instead of cash. Simplifies allocation.' },
+                                { model: 'Profit Sharing', risk: 'High', capitalRequirement: 'Medium', expectedRoi: '31%', reason: 'High return potential, but carries budget overrun and cost escalation risks.' },
+                                { model: 'Hybrid (Guarantee + Upside)', risk: 'High', capitalRequirement: 'Medium', expectedRoi: '29%', reason: 'Safeguards landowner with minimum guarantee, but builder carries higher downside risk.' }
+                              ]).map((item, idx) => {
+                                const isRecommended = selectedJv.metadata?.aiRecommendation?.suggestedJvModel === item.model || 
+                                                      (idx === 0 && !selectedJv.metadata?.aiRecommendation?.suggestedJvModel);
+                                return (
+                                  <tr key={idx} style={{ 
+                                    borderBottom: '1px solid #f1f5f9',
+                                    background: isRecommended ? 'rgba(5, 150, 105, 0.03)' : 'transparent',
+                                    fontWeight: isRecommended ? 'bold' : 'normal'
+                                  }}>
+                                    <td style={{ padding: '10px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <Handshake size={12} className={isRecommended ? 'text-emerald-600' : 'text-slate-400'} />
+                                      <span>{item.model}</span>
+                                      {isRecommended && (
+                                        <span style={{ fontSize: '8px', background: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '10px', marginLeft: '4px', fontWeight: 'bold' }}>Recommended</span>
+                                      )}
+                                    </td>
+                                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                                      <span style={{ 
+                                        fontSize: '9px',
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        background: item.risk === 'High' ? '#fee2e2' : item.risk === 'Medium' ? '#fef3c7' : '#dcfce7',
+                                        color: item.risk === 'High' ? '#b91c1c' : item.risk === 'Medium' ? '#d97706' : '#15803d'
+                                      }}>
+                                        {item.risk}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '10px', textAlign: 'center', color: '#475569' }}>{item.capitalRequirement || item.capital || 'Low'}</td>
+                                    <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold', color: '#2563eb' }}>{item.expectedRoi}</td>
+                                    <td style={{ padding: '10px', color: '#475569', lineHeight: '1.4' }}>{item.reason}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
 
                       {/* Risks table */}
