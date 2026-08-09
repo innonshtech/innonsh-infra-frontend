@@ -2749,43 +2749,66 @@ Please advise me on the negotiation strategy, contract drafting clauses, or prof
                           </div>
                           <div className="ai-info-row">
                             <span className="ai-info-label">Government Approval Cost</span>
-                            <span className="ai-info-value">₹{(selectedJv.metadata?.financialDetails?.approvalCost || 2000000).toLocaleString()}</span>
+                            <span className="ai-info-value">₹{Number(selectedJv.metadata?.financialDetails?.approvalCost || 0).toLocaleString()}</span>
                           </div>
                           <div className="ai-info-row">
                             <span className="ai-info-label">Marketing & Launch Cost</span>
-                            <span className="ai-info-value">₹{(selectedJv.metadata?.financialDetails?.marketingCost || 3000000).toLocaleString()}</span>
+                            <span className="ai-info-value">₹{Number(selectedJv.metadata?.financialDetails?.marketingCost || 0).toLocaleString()}</span>
                           </div>
                           <div className="ai-info-row" style={{ borderBottom: 'none' }}>
                             <span className="ai-info-label">Miscellaneous Buffer Cost</span>
-                            <span className="ai-info-value">₹{(selectedJv.metadata?.financialDetails?.miscellaneousCost || 5000000).toLocaleString()}</span>
+                            <span className="ai-info-value">₹{Number(selectedJv.metadata?.financialDetails?.miscellaneousCost || 0).toLocaleString()}</span>
                           </div>
                         </div>
 
                         <div className="ai-info-list">
-                          <div className="ai-info-row">
-                            <span className="ai-info-label">Total Project Cost</span>
-                            <span className="ai-info-value danger">₹{(selectedJv.landValue + selectedJv.constructionCost + (selectedJv.metadata?.financialDetails?.approvalCost || 2000000) + (selectedJv.metadata?.financialDetails?.marketingCost || 3000000) + (selectedJv.metadata?.financialDetails?.miscellaneousCost || 5000000)).toLocaleString()}</span>
-                          </div>
-                          <div className="ai-info-row">
-                            <span className="ai-info-label">Estimated Sales Revenue</span>
-                            <span className="ai-info-value success">₹{(selectedJv.metadata?.financialDetails?.estimatedRevenue || (selectedJv.landValue + selectedJv.constructionCost) * 1.5).toLocaleString()}</span>
-                          </div>
-                          <div className="ai-info-row">
-                            <span className="ai-info-label">Projected Net Profit</span>
-                            <span className="ai-info-value" style={{ color: '#2563eb' }}>₹{(selectedJv.metadata?.financialDetails?.estimatedProfit || 50000000).toLocaleString()}</span>
-                          </div>
-                          <div className="ai-info-row">
-                            <span className="ai-info-label">Return on Investment (ROI)</span>
-                            <span className="ai-info-value">{selectedJv.metadata?.financialDetails?.roi || 47.6}%</span>
-                          </div>
-                          <div className="ai-info-row">
-                            <span className="ai-info-label">Project Break-even</span>
-                            <span className="ai-info-value">{selectedJv.metadata?.financialDetails?.breakEvenPeriod || 3.5} Years</span>
-                          </div>
-                          <div className="ai-info-row" style={{ borderBottom: 'none' }}>
-                            <span className="ai-info-label">Escrow Bank Partner</span>
-                            <span className="ai-info-value" style={{ color: '#4b5563' }}>{selectedJv.metadata?.financialDetails?.escrowBankName || 'HDFC Bank Ltd'} ({selectedJv.metadata?.financialDetails?.escrowAccountNumber || '999888777123'})</span>
-                          </div>
+                          {(() => {
+                            const approval = Number(selectedJv.metadata?.financialDetails?.approvalCost || 0);
+                            const marketing = Number(selectedJv.metadata?.financialDetails?.marketingCost || 0);
+                            const misc = Number(selectedJv.metadata?.financialDetails?.miscellaneousCost || 0);
+                            const totalCost = selectedJv.landValue + selectedJv.constructionCost + approval + marketing + misc;
+                            
+                            const expectedRev = Number(selectedJv.metadata?.financialDetails?.expectedRevenue) || 
+                                                Number(selectedJv.metadata?.financialDetails?.estimatedRevenue) || 0;
+                                                
+                            const netProfit = expectedRev > 0 ? (expectedRev - totalCost) : 0;
+                            const calcRoi = totalCost > 0 && netProfit > 0 ? ((netProfit / totalCost) * 100).toFixed(1) : null;
+                            
+                            return (
+                              <>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Total Project Cost</span>
+                                  <span className="ai-info-value danger">₹{totalCost.toLocaleString()}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Expected Sales Revenue</span>
+                                  <span className="ai-info-value success">{expectedRev > 0 ? `₹${expectedRev.toLocaleString()}` : 'Not Configured'}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Projected Net Profit</span>
+                                  <span className="ai-info-value" style={{ color: '#2563eb', fontWeight: 'bold' }}>
+                                    {netProfit > 0 ? `₹${netProfit.toLocaleString()}` : (expectedRev > 0 ? 'Negative / Break-even' : 'Not Calculated')}
+                                  </span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Return on Investment (ROI)</span>
+                                  <span className="ai-info-value">{calcRoi ? `${calcRoi}%` : 'Not Calculated'}</span>
+                                </div>
+                                <div className="ai-info-row">
+                                  <span className="ai-info-label">Project Break-even</span>
+                                  <span className="ai-info-value">{selectedJv.metadata?.financialDetails?.breakEvenPeriod && selectedJv.metadata?.financialDetails?.breakEvenPeriod !== 3.5 ? `${selectedJv.metadata.financialDetails.breakEvenPeriod} Years` : 'Not Configured'}</span>
+                                </div>
+                                <div className="ai-info-row" style={{ borderBottom: 'none' }}>
+                                  <span className="ai-info-label">Escrow Bank Partner</span>
+                                  <span className="ai-info-value" style={{ color: '#4b5563' }}>
+                                    {selectedJv.metadata?.financialDetails?.escrowBankName && selectedJv.metadata?.financialDetails?.escrowBankName !== 'HDFC Bank Ltd' ? (
+                                      `${selectedJv.metadata.financialDetails.escrowBankName} (${selectedJv.metadata?.financialDetails?.escrowAccountNumber || 'No Account'})`
+                                    ) : 'Not Setup'}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
