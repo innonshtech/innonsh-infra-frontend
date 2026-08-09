@@ -24,10 +24,10 @@ const contractorMenu = [
   {
     title: 'AI Planning Suite',
     links: [
-      { label: 'AI Document Analysis', icon: ShieldCheck, path: '/ai/land?step=4' },
       { label: 'AI Land Intelligence', icon: MapIcon, path: '/ai/land?step=5' },
-      { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
+      { label: 'AI Document Analysis', icon: ShieldCheck, path: '/ai/land?step=4' },
       { label: 'AI Feasibility', icon: FilePieChart, path: '/ai/feasibility' },
+      { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
       { label: 'AI Approvals', icon: FileCheck, path: '/ai/approvals' },
       { label: 'AI Property Planner', icon: LayoutDashboard, path: '/ai/property-planning' },
     ]
@@ -72,10 +72,10 @@ const builderMenu = [
   {
     title: 'AI Planning Suite',
     links: [
-      { label: 'AI Document Analysis', icon: ShieldCheck, path: '/ai/land?step=4' },
       { label: 'AI Land Intelligence', icon: MapIcon, path: '/ai/land?step=5' },
-      { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
+      { label: 'AI Document Analysis', icon: ShieldCheck, path: '/ai/land?step=4' },
       { label: 'AI Feasibility', icon: FilePieChart, path: '/ai/feasibility' },
+      { label: 'AI JV Manager', icon: Handshake, path: '/ai/jv' },
       { label: 'AI Approvals', icon: FileCheck, path: '/ai/approvals' },
       { label: 'AI Property Planner', icon: LayoutDashboard, path: '/ai/property-planning' },
     ]
