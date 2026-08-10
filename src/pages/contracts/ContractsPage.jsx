@@ -109,7 +109,7 @@ export default function ContractsPage() {
       }
     >
       {/* Stats Summary */}
-      <div className="stats-grid mb-lg" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)' }}>
+      <div className="contracts-stats-grid">
         <div className="stat-card">
           <div className="flex flex-col">
             <span className="text-sm text-muted font-medium">Total Value</span>
@@ -340,7 +340,7 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
               <h4 className="flex items-center gap-2 mb-md mt-0" style={{ fontSize: '1rem', fontWeight: 600 }}>
                 <FileText size={16} className="text-primary" /> Contextual Targeting
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+              <div className="contracts-grid-2col">
                 <div className="form-group">
                   <label className="form-label text-xs font-bold uppercase">Linked Development / Project</label>
                   <select className="form-select" value={form.projectId} onChange={e => handleProjectChange(e.target.value)}>
@@ -381,7 +381,7 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
             </div>
 
             {/* Group B: Classification Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+            <div className="contracts-grid-2col" style={{ marginBottom: 'var(--space-lg)' }}>
               <div className="form-group">
                 <label className="form-label text-xs font-bold">Category</label>
                 <select className="form-select" value={form.partyType} onChange={e => setForm({...form, partyType: e.target.value})}>
@@ -401,31 +401,31 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
               <h4 className="flex items-center gap-2 mb-md mt-0" style={{ fontSize: '1rem', fontWeight: 600 }}>
                 <DollarSign size={16} className="text-success" /> Financials & Terminus
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)' }}>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+              <div className="contracts-grid-4col">
+                <div className="form-group contracts-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Agreed Contract Value (₹) *</label>
                   <input className="form-input font-bold text-lg" style={{ color: 'var(--accent-primary)' }} type="number" placeholder="0.00" value={form.totalValue} onChange={e => setForm({...form, totalValue: e.target.value})} />
                 </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group contracts-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Paid Amount (₹)</label>
                   <input className="form-input font-bold text-lg text-success" type="number" placeholder="0.00" value={form.paidAmount} onChange={e => setForm({...form, paidAmount: e.target.value})} />
                 </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group contracts-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Security Retention (%)</label>
                   <input className="form-input" type="number" step="0.1" placeholder="e.g. 5" value={form.retentionPercent} onChange={e => setForm({...form, retentionPercent: e.target.value})} />
                 </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group contracts-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Calculated Retention (₹)</label>
                   <div className="form-input" style={{ background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', height: '38px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
                     ₹{((parseFloat(form.totalValue) || 0) * (parseFloat(form.retentionPercent) || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group contracts-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Execution Start Date</label>
                   <input className="form-input" type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} />
                 </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group contracts-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label text-xs font-bold">Tentative Completion</label>
                   <input className="form-input" type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} />
                 </div>
@@ -433,7 +433,7 @@ function ContractFormModal({ editing, projects, onSubmit, onClose }) {
             </div>
 
             {/* Group D: Descriptive Overlays */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+            <div className="contracts-grid-2col">
               <div className="form-group">
                 <label className="form-label text-xs font-bold">Brief of Services / Description</label>
                 <textarea className="form-input text-sm" rows={4} placeholder="Summarize critical boundary conditions..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} />

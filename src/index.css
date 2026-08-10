@@ -827,3 +827,105 @@ table {
     grid-template-columns: 1fr !important; /* Force single column projects grid */
   }
 }
+
+/* --- Organization Settings Mobile Responsive Layouts --- */
+.settings-layout-profile {
+  display: grid;
+  grid-template-columns: 1fr 2.5fr;
+  gap: var(--space-xl);
+}
+
+.settings-grid-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.settings-layout-branches {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-xl);
+}
+
+.settings-layout-departments {
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr;
+  gap: var(--space-xl);
+}
+
+.settings-grid-member,
+.settings-grid-invite {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+@media (max-width: 768px) {
+  .settings-layout-profile,
+  .settings-layout-branches,
+  .settings-layout-departments {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-lg) !important;
+  }
+  
+  .settings-grid-inputs,
+  .settings-grid-member,
+  .settings-grid-invite {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-md) !important;
+  }
+  
+  /* Make span 2 form-groups take full width 1 column on mobile */
+  .settings-span-mobile-2 {
+    grid-column: span 1 !important;
+  }
+}
+
+/* --- Contract Management Mobile Responsive Layouts --- */
+.contracts-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.contracts-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.contracts-grid-4col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 1024px) {
+  .contracts-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .contracts-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-sm) !important;
+  }
+  
+  .contracts-grid-2col {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-sm) !important;
+  }
+  
+  .contracts-grid-4col {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-sm) !important;
+  }
+  
+  /* Make span 2 fields fill full width on mobile */
+  .contracts-span-mobile-2 {
+    grid-column: span 1 !important;
+  }
+}

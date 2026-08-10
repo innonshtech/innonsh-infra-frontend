@@ -89,7 +89,7 @@ export default function ReportsHub() {
         {activeReport === 'overview' && (
           <>
             {/* KPI Cards */}
-            <div className="att-summary-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
+            <div className="reports-kpi-grid">
               <div className="att-kpi">
                 <div className="att-kpi-val" style={{ color: '#10b981' }}>{formatCurrency(data.totalIncome)}</div>
                 <div className="att-kpi-lbl">Total Income</div>
@@ -111,7 +111,7 @@ export default function ReportsHub() {
             </div>
 
             {/* Charts Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 20, marginBottom: 24 }}>
+            <div className="reports-charts-grid">
               {/* Cash Flow Bar Chart */}
               <div className="card-flat" style={{ padding: 20 }}>
                 <h3 style={{ marginBottom: 16, fontSize: 15, fontWeight: 600 }}>Monthly Cash Flow (Last 6 Months)</h3>
@@ -164,7 +164,7 @@ export default function ReportsHub() {
             {/* Income vs Expense Summary */}
             <div className="card-flat" style={{ padding: 20 }}>
               <h3 style={{ marginBottom: 16, fontSize: 15, fontWeight: 600 }}>Collection Summary</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              <div className="reports-collection-grid">
                 <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-secondary)' }}>
                   <div className="text-xs text-muted uppercase" style={{ marginBottom: 4 }}>Total Invoiced</div>
                   <div style={{ fontSize: 22, fontWeight: 700, color: '#3b82f6' }}>{formatCurrency(data.totalInvoiced)}</div>
@@ -241,7 +241,7 @@ export default function ReportsHub() {
               </div>
             )}
 
-            <div className="att-summary-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 20 }}>
+            <div className="reports-collection-grid" style={{ marginBottom: 20 }}>
               <div className="att-kpi">
                 <div className="att-kpi-val" style={{ color: '#3b82f6' }}>{formatCurrency(data.totalInvoiced)}</div>
                 <div className="att-kpi-lbl">Total Invoiced</div>

@@ -705,7 +705,7 @@ export default function SettingsPage() {
         <>
           {/* TAB 1: COMPANY PROFILE */}
           {tab === 'profile' && (
-            <form onSubmit={handleUpdateProfile} style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: 'var(--space-xl)' }}>
+            <form onSubmit={handleUpdateProfile} className="settings-layout-profile">
               {/* Logo Column */}
               <div className="card-flat" style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)', alignSelf: 'start' }}>
                 <div style={{
@@ -749,7 +749,7 @@ export default function SettingsPage() {
 
               {/* Form Data */}
               <div className="card-flat" style={{ padding: 'var(--space-xl)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
+                <div className="settings-grid-inputs">
                   <div className="form-group">
                     <label className="form-label">Company Name *</label>
                     <input className="form-input" required placeholder="e.g. Innonsh Construction Ltd" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} />
@@ -782,11 +782,11 @@ export default function SettingsPage() {
                     <label className="form-label">Contact Phone</label>
                     <input className="form-input" placeholder="e.g. +91 98765 43210" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <div className="form-group settings-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                     <label className="form-label">Website URL</label>
                     <input className="form-input" placeholder="https://example.com" value={profile.website} onChange={e => setProfile({ ...profile, website: e.target.value })} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <div className="form-group settings-span-mobile-2" style={{ gridColumn: 'span 2' }}>
                     <label className="form-label">Street Address</label>
                     <textarea className="form-input" rows={2} placeholder="e.g. Office No. 104, Block-A, Prime Business Hub" value={profile.address} onChange={e => setProfile({ ...profile, address: e.target.value })} />
                   </div>
@@ -863,7 +863,7 @@ export default function SettingsPage() {
 
           {/* TAB 3: DEPARTMENTS */}
           {tab === 'departments' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 'var(--space-xl)' }}>
+            <div className="settings-layout-branches">
               <div className="card-flat" style={{ padding: 'var(--space-lg)', alignSelf: 'start' }}>
                 <h3>Add Department</h3>
                 <form onSubmit={handleAddDepartment}>
@@ -907,7 +907,7 @@ export default function SettingsPage() {
 
           {/* TAB 4: DESIGNATIONS */}
           {tab === 'designations' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: 'var(--space-xl)' }}>
+            <div className="settings-layout-departments">
               <div className="card-flat" style={{ padding: 'var(--space-lg)', alignSelf: 'start' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
                   <h3 style={{ margin: 0 }}>{editingDes ? 'Edit Designation' : 'Add Designation'}</h3>
@@ -1133,17 +1133,17 @@ export default function SettingsPage() {
             </div>
             <form onSubmit={handleSaveBranch}>
               <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+                <div className="settings-grid-member">
                   <div className="form-group"><label className="form-label">Branch Name *</label><input className="form-input" required value={branchForm.name} onChange={e => setBranchForm({...branchForm, name: e.target.value})} /></div>
                   <div className="form-group"><label className="form-label">Branch Code *</label><input className="form-input" required placeholder="e.g. BY-01" value={branchForm.code} onChange={e => setBranchForm({...branchForm, code: e.target.value})} /></div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+                <div className="settings-grid-member">
                   <div className="form-group"><label className="form-label">Contact Phone *</label><input className="form-input" required value={branchForm.phone} onChange={e => setBranchForm({...branchForm, phone: e.target.value})} /></div>
                   <div className="form-group"><label className="form-label">Contact Email *</label><input className="form-input" required type="email" value={branchForm.email} onChange={e => setBranchForm({...branchForm, email: e.target.value})} /></div>
                 </div>
                 <div className="form-group"><label className="form-label">Branch Manager Name</label><input className="form-input" placeholder="e.g. Sunil Kamble" value={branchForm.managerName} onChange={e => setBranchForm({...branchForm, managerName: e.target.value})} /></div>
                 <div className="form-group"><label className="form-label">Street Address *</label><input className="form-input" required value={branchForm.address} onChange={e => setBranchForm({...branchForm, address: e.target.value})} /></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+                <div className="settings-grid-member">
                   <div className="form-group"><label className="form-label">City *</label><input className="form-input" required value={branchForm.city} onChange={e => setBranchForm({...branchForm, city: e.target.value})} /></div>
                   <div className="form-group"><label className="form-label">State *</label><input className="form-input" required value={branchForm.state} onChange={e => setBranchForm({...branchForm, state: e.target.value})} /></div>
                 </div>
@@ -1296,7 +1296,7 @@ function InviteMemberModal({ designations = [], onClose, onCreated }) {
         <div className="modal-header"><h3>Invite Team Member</h3><button className="btn btn-icon btn-ghost" onClick={onClose}>✕</button></div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+            <div className="settings-grid-invite">
               <div className="form-group"><label className="form-label">First Name *</label><input className="form-input" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} autoFocus /></div>
               <div className="form-group"><label className="form-label">Last Name</label><input className="form-input" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} /></div>
             </div>

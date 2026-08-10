@@ -94,3 +94,59 @@
 .report-card:hover .report-card-btn {
   opacity: 1;
 }
+
+/* --- Reports Hub Responsive Grids --- */
+.reports-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.reports-charts-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.reports-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+  .reports-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .reports-charts-grid,
+  .reports-collection-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .reports-kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  /* Make Tab Bar scrollable horizontally on mobile */
+  .labour-tab-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    display: flex;
+    gap: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-primary);
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .labour-tab {
+    flex-shrink: 0;
+  }
+}
