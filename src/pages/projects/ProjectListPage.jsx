@@ -342,7 +342,7 @@ function CreateProjectModal({ onClose, onCreated, erpType }) {
             {/* 1. Basic Information */}
             <div>
               <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>1. Basic Information</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="contracts-grid-2col">
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '12px' }}>Project Name *</label>
                   <input type="text" required className="form-input" placeholder="e.g., Skyline Towers Phase 3" value={form.name} onChange={e => setForm({...form, name: e.target.value})} autoFocus />
@@ -395,7 +395,7 @@ function CreateProjectModal({ onClose, onCreated, erpType }) {
             {/* 2. Client Information */}
             <div>
               <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>2. Client Information</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="contracts-grid-2col">
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '12px' }}>Client Name</label>
                   <input type="text" className="form-input" placeholder="e.g., Rahul Sharma" value={form.clientName} onChange={e => setForm({...form, clientName: e.target.value})} />
@@ -426,7 +426,7 @@ function CreateProjectModal({ onClose, onCreated, erpType }) {
             {/* 3. Location Details */}
             <div>
               <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid var(--border-secondary)', paddingBottom: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>3. Location Details</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="contracts-grid-2col">
                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
                   <label className="form-label" style={{ fontSize: '12px' }}>Site Address</label>
                   <textarea className="form-input" rows="2" placeholder="Enter physical site address..." value={form.address} onChange={e => setForm({...form, address: e.target.value})} />

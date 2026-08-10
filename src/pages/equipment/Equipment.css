@@ -73,7 +73,8 @@
 }
 
 .drawer-container {
-  width: 420px;
+  width: 100%;
+  max-width: 420px;
   height: 100%;
   background: var(--bg-primary);
   border-left: 1px solid var(--border-primary);
@@ -86,6 +87,13 @@
 
 .drawer-overlay.active .drawer-container {
   transform: translateX(0);
+}
+
+@media (max-width: 480px) {
+  .drawer-detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-sm) !important;
+  }
 }
 
 .drawer-header {

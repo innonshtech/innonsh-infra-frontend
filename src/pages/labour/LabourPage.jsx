@@ -1060,7 +1060,7 @@ export default function LabourPage() {
           {/* 2. MONTHLY REGISTER GRID */}
           {attSubTab === 'register' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="att-controls" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 10, alignItems: 'end' }}>
+              <div className="att-controls att-controls-grid">
                 <div className="att-field">
                   <span className="att-label">Month</span>
                   <select value={registerMonth} onChange={e => setRegisterMonth(parseInt(e.target.value))} className="att-select">
@@ -1418,7 +1418,7 @@ export default function LabourPage() {
               {/* Personal & Contact Details */}
               <div style={{ marginBottom: 20 }}>
                 <h4 style={{ fontSize: 13, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10, letterSpacing: '0.5px' }}>Personal & Contact Details</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-2col" style={{ gap: 12 }}>
                   <div className="fld"><span className="fld-lbl">Phone Number</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{selectedWorker.phone || '—'}</div></div>
                   <div className="fld"><span className="fld-lbl">Gender</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{selectedWorker.gender || '—'}</div></div>
                   <div className="fld"><span className="fld-lbl">Date of Birth</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{selectedWorker.dob ? new Date(selectedWorker.dob).toLocaleDateString('en-IN') : '—'}</div></div>
@@ -1429,7 +1429,7 @@ export default function LabourPage() {
               {/* Employment & Wages */}
               <div style={{ marginBottom: 20 }}>
                 <h4 style={{ fontSize: 13, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10, letterSpacing: '0.5px' }}>Employment & Wages</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-2col" style={{ gap: 12 }}>
                   <div className="fld"><span className="fld-lbl">Daily Wage</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8, fontWeight: 700, color: 'var(--accent-primary)' }}>{formatCurrency(selectedWorker.dailyWage)} / day</div></div>
                   <div className="fld"><span className="fld-lbl">Overtime Rate</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{formatCurrency(selectedWorker.overtimeRate)} / hour</div></div>
                   <div className="fld"><span className="fld-lbl">Current Project</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{typeof selectedWorker.project === 'object' ? (selectedWorker.project?.name || 'No Project Assigned') : (selectedWorker.project || 'No Project Assigned')}</div></div>
@@ -1440,7 +1440,7 @@ export default function LabourPage() {
               {/* KYC & Payment */}
               <div>
                 <h4 style={{ fontSize: 13, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10, letterSpacing: '0.5px' }}>KYC & Payment Info</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-2col" style={{ gap: 12 }}>
                   <div className="fld"><span className="fld-lbl">Aadhaar Card</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{selectedWorker.aadhaarNumber || '—'}</div></div>
                   <div className="fld"><span className="fld-lbl">PAN Card</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{selectedWorker.panNumber || '—'}</div></div>
                   <div className="fld"><span className="fld-lbl">Payment Mode</span><div className="fld-inp" style={{ background: 'var(--bg-tertiary)', padding: 8 }}>{selectedWorker.paymentMode || 'CASH'}</div></div>
@@ -1776,7 +1776,7 @@ export default function LabourPage() {
           <div className="labour-page-sub">Upload attendance from supervisor's Excel sheet</div>
 
           <div className="erp-card" style={{ padding: 'var(--space-lg)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'end', marginBottom: 16 }}>
+            <div className="labour-upload-grid">
               <div className="fld">
                 <label className="fld-lbl">Project *</label>
                 <select className="fld-sel" value={uploadProject} onChange={e => setUploadProject(e.target.value)}>

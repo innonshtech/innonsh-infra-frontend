@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { generateInvoicePDF } from '../../utils/invoicePdf';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import '../labour/Labour.css';
 
 const formatCurrency = (amount) => {
   if (!amount) return '₹0';
@@ -571,7 +572,7 @@ function CreateInvoiceModal({ onClose, onCreated }) {
         <div className="modal-header"><h3>Create Invoice</h3><button className="btn btn-icon btn-ghost" onClick={onClose}>✕</button></div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+            <div className="contracts-grid-2col">
               <div className="form-group"><label className="form-label">Invoice # *</label><input className="form-input" value={form.invoiceNumber} onChange={e => setForm({...form, invoiceNumber: e.target.value})} placeholder="INV-001" /></div>
               <div className="form-group"><label className="form-label">Client Name *</label><input className="form-input" value={form.clientName} onChange={e => setForm({...form, clientName: e.target.value})} /></div>
             </div>
@@ -581,7 +582,7 @@ function CreateInvoiceModal({ onClose, onCreated }) {
                 {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+            <div className="contracts-grid-2col">
               <div className="form-group"><label className="form-label">Total Amount (₹) *</label><input className="form-input" type="number" value={form.totalAmount} onChange={e => setForm({...form, totalAmount: e.target.value})} /></div>
               <div className="form-group"><label className="form-label">Due Date *</label><input className="form-input" type="date" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} /></div>
             </div>
@@ -617,7 +618,7 @@ function CreateTransactionModal({ onClose, onCreated }) {
         <div className="modal-header"><h3>Record Transaction</h3><button className="btn btn-icon btn-ghost" onClick={onClose}>✕</button></div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }}>
+            <div className="contracts-grid-2col">
               <div className="form-group"><label className="form-label">Type</label>
                 <select className="form-select" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
                   <option value="INCOME">Income</option><option value="EXPENSE">Expense</option>
@@ -725,7 +726,7 @@ function RecordPaymentModal({ invoice, onClose, onDone }) {
             )}
 
             {method === 'CHEQUE' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }} className="animate-fade-in">
+              <div className="contracts-grid-2col animate-fade-in">
                 <div className="form-group">
                   <label className="form-label">Cheque Number *</label>
                   <input 

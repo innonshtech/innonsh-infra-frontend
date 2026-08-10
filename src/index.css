@@ -939,4 +939,22 @@ table {
   .table-container .data-table {
     min-width: 800px !important;
   }
+
+  /* Make att-summary-row KPI cards stack vertically on mobile */
+  .att-summary-row {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-sm) !important;
+  }
+
+  /* Make erp-card scrollable on mobile to support table view */
+  .erp-card {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+  
+  .erp-card .erp-tbl {
+    min-width: 850px !important;
+    table-layout: auto !important;
+  }
 }
