@@ -928,4 +928,15 @@ table {
   .contracts-span-mobile-2 {
     grid-column: span 1 !important;
   }
+
+  /* Make table-container horizontally scrollable to prevent squeezing */
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+  
+  .table-container .data-table {
+    min-width: 800px !important;
+  }
 }
